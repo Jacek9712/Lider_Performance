@@ -241,9 +241,12 @@ try:
             9: "Wrzesień", 10: "Październik", 11: "Listopad", 12: "Grudzień"
         }
 
-        with st.sidebar:
-            st.header("⚙️ USTAWIENIA")
-            widok = st.sidebar.radio("WYBIERZ WIDOK:", [
+        # --- ZMIANA: PANEL STEROWANIA NA GŁÓWNEJ STRONIE ZAMIAST SIDEBARU ---
+        st.markdown("### ⚙️ PANEL STEROWANIA")
+        col_nav1, col_nav2, col_nav3, col_nav4 = st.columns([2, 1.5, 1, 1])
+
+        with col_nav1:
+            widok = st.selectbox("WYBIERZ WIDOK:", [
                 "Dashboard Główny",
                 "Raport Dzienny", 
                 "Zarządzanie i RPE", 
@@ -255,31 +258,36 @@ try:
                 "Surowe Dane"
             ])
             
-            teraz = datetime.now(PL_TZ)
-            wybrana_data = teraz.date() # Zabezpieczenie dla widoków bez kalendarza
-            
+        teraz = datetime.now(PL_TZ)
+        wybrana_data = teraz.date() # Zabezpieczenie dla widoków bez kalendarza
+        
+        with col_nav2:
             if widok in ["Dashboard Główny", "Raport Dzienny", "Wykresy Drużynowe", "Zarządzanie i RPE", "Siłownia i Regeneracja", "🧠 AI & Ryzyko Urazów"]:
                 wybrana_data = st.date_input("Wybierz dzień analizy:", value=teraz.date())
             else:
-                wybrany_rok = st.selectbox("Rok:", [2024, 2025, 2026], index=2 if teraz.year == 2026 else (1 if teraz.year == 2025 else 0))
-                wybrany_miesiac_nazwa = st.selectbox("Miesiąc:", list(NAZWY_MIESIECY.values()), index=teraz.month-1)
-                wybrany_miesiac_nr = [k for k, v in NAZWY_MIESIECY.items() if v == wybrany_miesiac_nazwa][0]
-            
-            st.write("---")
-            if st.button("🔄 Odśwież Dane"):
+                col_m1, col_m2 = st.columns(2)
+                with col_m1:
+                    wybrany_rok = st.selectbox("Rok:", [2024, 2025, 2026], index=2 if teraz.year == 2026 else (1 if teraz.year == 2025 else 0))
+                with col_m2:
+                    wybrany_miesiac_nazwa = st.selectbox("Miesiąc:", list(NAZWY_MIESIECY.values()), index=teraz.month-1)
+                    wybrany_miesiac_nr = [k for k, v in NAZWY_MIESIECY.items() if v == wybrany_miesiac_nazwa][0]
+        
+        with col_nav3:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Odśwież Dane", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
-            
-            if st.button("Wyloguj"):
+                
+        with col_nav4:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🚪 Wyloguj", use_container_width=True):
                 st.session_state["auth_staff"] = False
                 st.rerun()
 
-            st.write("---")
-            st.markdown("**STATUS BAZY DANYCH:**")
-            if STATUS_GRUP == "OK":
-                st.success("✅ Zawodniczki i Grupy zsynchronizowane.")
-            else:
-                st.error(f"⚠️ **Awaryjny kod.**<br>Powód: {STATUS_GRUP}", icon="🚨")
+        if STATUS_GRUP != "OK":
+            st.error(f"⚠️ **Awaryjny kod.** Powód: {STATUS_GRUP}", icon="🚨")
+            
+        st.write("---")
 
         # --- PRE-PROCESOWANIE DANYCH ---
         df_rpe_all = df[df['Typ_Raportu'] == 'RPE'].copy()
