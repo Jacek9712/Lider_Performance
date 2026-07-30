@@ -16,8 +16,8 @@ COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
 COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
 PASSWORD_TRENER = "Lider!"  # Hasło dla sztabu
-GODZINA_WELLNESS = 10 
-GODZINA_RPE = 17
+GODZINA_WELLNESS = 23
+GODZINA_RPE = 23
 
 st.set_page_config(page_title="Lider Swarzędz - Sztab", page_icon="🏀", layout="wide")
 
