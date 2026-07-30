@@ -95,6 +95,9 @@ st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
     
+    /* UKRYCIE MENU STREAMLIT I STOPKI */
+    #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}} header {{visibility: hidden;}}
+    
     .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
     html, body, [class*="st-"], .stMarkdown, label, p, span {{ font-family: 'Anton', sans-serif !important; color: {COLOR_TEXT}; }}
     
