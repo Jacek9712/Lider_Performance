@@ -15,13 +15,14 @@ COLOR_PRIMARY = "#D32F2F"   # Głęboka czerwień z logo
 COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
 COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
-PASSWORD_TRENER = "Lider!"  # Zaktualizowane hasło dla sztabu
+PASSWORD_TRENER = "Lider!"  # Hasło dla sztabu
 GODZINA_WELLNESS = 10 
 GODZINA_RPE = 17
 
 st.set_page_config(page_title="Lider Swarzędz - Sztab", page_icon="🏀", layout="wide")
 
 # --- LISTY ZAWODNICZEK I GRUP (AWARYJNY FALLBACK) ---
+# Upewnij się, że te dwie zmienne są zawsze na samej górze pliku, zaraz po konfiguracji!
 FALLBACK_LISTA_ZAWODNIKOW = sorted([
     "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
     "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
@@ -29,6 +30,15 @@ FALLBACK_LISTA_ZAWODNIKOW = sorted([
     "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
 ])
 
+FALLBACK_GRUPY_LISTA = [
+    "Grupa A", 
+    "Grupa B", 
+    "Grupa C",
+    "Rozgrywające", 
+    "Grupa Siła / Rebuilding", 
+    "Grupa Prewencja / Powrót po kontuzji", 
+    "Grupa Dynamiczna / Moc"
+]
 
 # --- ŁADOWANIE DANYCH Z GSHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -64,6 +74,7 @@ def pobierz_dynamiczne_grupy_i_zawodnikow():
             return FALLBACK_LISTA_ZAWODNIKOW, FALLBACK_GRUPY_LISTA, "Brak kolumn 'Zawodnik' i 'Grupa'."
             
     except Exception as e:
+        # Jeśli pojawi się tu błąd, zwróci bezpieczne, zdefiniowane wyżej listy
         return FALLBACK_LISTA_ZAWODNIKOW, FALLBACK_GRUPY_LISTA, f"Błąd (Brak zakładki 'Grupy'?): {e}"
 
 LISTA_ZAWODNIKOW, GRUPY_LISTA, STATUS_GRUP = pobierz_dynamiczne_grupy_i_zawodnikow()
@@ -185,11 +196,12 @@ def load_data(worksheet_name="Arkusz1"):
         st.error(f"Błąd połączenia z Arkuszem {worksheet_name}: {e}")
         return pd.DataFrame()
 
+# Logo sztabowe (bezpieczne wyszukiwanie)
 def get_logo():
-    possible_files = ["IMG_3658.PNG", "lider.png", "logo.png", "logo.jpg"]
+    possible_files = ["herb.png", "IMG_3658.PNG", "img_3658.png", "lider.png", "logo.png", "logo.jpg"]
     for f in possible_files:
         if os.path.exists(f): return f
-    return "IMG_3658.PNG"
+    return "https://cdn-icons-png.flaticon.com/512/8054/8054009.png"
 
 col_l1, col_l2, col_l3 = st.columns([1, 0.5, 1])
 with col_l2:
