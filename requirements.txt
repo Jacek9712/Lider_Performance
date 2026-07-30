@@ -1,0 +1,10 @@
+streamlit
+st-gsheets-connection
+pandas
+pytz
+plotly
+matplotlib
+xlsxwriter
+streamlit-javascript
+numpy
+gspread
