@@ -16,16 +16,6 @@ COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
 COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
 
-# --- DEFINICJA GRUP TRENINGOWYCH (AWARYJNY FALLBACK) ---
-SLOWNIK_GRUP = {
-    "Grupa A": [
-        "Dima Avdieiev", "Leo Przybylak", "Michał Smoczyński", "Bartosz Piechowiak", 
-        "Filip Jakubowski", "Jan Niedzielski", "Kacper Lepczyński", 
-        "Kacper Rychert", "Kamil Kumoch", "Karol Łysiak", "Marcel Stefaniak", 
-        "Mateusz Stanek", "Patryk Kusztal", "Paweł Kwiatkowski", "Oskar Mazurkiewicz", 
-        "Sebastian Steblecki", "Szymon Zalewski", "Tomasz Wojcinowicz"
-    ]
-}
 
 # --- GLOBALNA FUNKCJA DO USUWANIA POLSKICH ZNAKÓW ---
 def usun_polskie_znaki(s):
@@ -87,7 +77,7 @@ def normalizuj_df_arkusza(df):
 
 # Logo
 def get_logo():
-    possible_files = ["IMG_3658.PNG", "lider.png", "logo.png", "logo.jpg"]
+    possible_files = ["herb.png", "lider.png", "logo.png", "logo.jpg"]
     for f in possible_files:
         if os.path.exists(f): return f
     return "IMG_3658.PNG" # Fallback do nazwy pliku Lidera
