@@ -16,6 +16,16 @@ COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
 COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
 
+# --- DEFINICJA GRUP TRENINGOWYCH (AWARYJNY FALLBACK) ---
+SLOWNIK_GRUP = {
+    "Grupa A": [
+        "Dima Avdieiev", "Leo Przybylak", "Michał Smoczyński", "Bartosz Piechowiak", 
+        "Filip Jakubowski", "Jan Niedzielski", "Kacper Lepczyński", 
+        "Kacper Rychert", "Kamil Kumoch", "Karol Łysiak", "Marcel Stefaniak", 
+        "Mateusz Stanek", "Patryk Kusztal", "Paweł Kwiatkowski", "Oskar Mazurkiewicz", 
+        "Sebastian Steblecki", "Szymon Zalewski", "Tomasz Wojcinowicz"
+    ]
+}
 
 # --- GLOBALNA FUNKCJA DO USUWANIA POLSKICH ZNAKÓW ---
 def usun_polskie_znaki(s):
@@ -77,10 +87,13 @@ def normalizuj_df_arkusza(df):
 
 # Logo
 def get_logo():
-    possible_files = ["herb.png", "lider.png", "logo.png", "logo.jpg"]
+    # Przywrócono 'herb.png' jako główną nazwę pliku do wyszukania
+    possible_files = ["herb.png", "IMG_3658.PNG", "img_3658.png", "lider.png", "logo.png", "logo.jpg"]
     for f in possible_files:
         if os.path.exists(f): return f
-    return "IMG_3658.PNG" # Fallback do nazwy pliku Lidera
+    
+    # Bezpieczny fallback z internetu (ikona koszykówki), który zapobiegnie awarii ("crashem") aplikacji
+    return "https://cdn-icons-png.flaticon.com/512/8054/8054009.png"
 
 LOGO_PATH = get_logo()
 
@@ -148,14 +161,29 @@ def check_today_report(zawodnik, typ):
 
 def save_to_gsheets(row_data):
     try:
-        df_original = conn.read(worksheet="Arkusz1", ttl=0)
-        if df_original is None or df_original.empty: return False
-        oryginalne_kolumny = list(df_original.columns)
-        df_internal = normalizuj_df_arkusza(df_original)
+        try:
+            df_original = conn.read(worksheet="Arkusz1", ttl=0)
+        except:
+            df_original = pd.DataFrame()
+            
+        if df_original is None: 
+            df_original = pd.DataFrame()
+            
+        if df_original.empty:
+            df_internal = pd.DataFrame(columns=["Data", "Typ_Raportu", "Zawodnik", "Sen", "Zmeczenie", "Bolesnosc", "Stres", "RPE", "Komentarz"])
+            oryginalne_kolumny = list(df_internal.columns)
+        else:
+            oryginalne_kolumny = list(df_original.columns)
+            df_internal = normalizuj_df_arkusza(df_original)
+            
         df_internal['Data_dt'] = pd.to_datetime(df_internal['Data'], errors='coerce')
         dzisiaj = datetime.now(PL_TZ).date()
         
-        juz_jest = df_internal[(df_internal['Zawodnik'] == row_data['Zawodnik']) & (df_internal['Typ_Raportu'] == row_data['Typ_Raportu']) & (df_internal['Data_dt'].dt.date == dzisiaj)]
+        if not df_internal.empty and 'Data_dt' in df_internal.columns:
+            juz_jest = df_internal[(df_internal['Zawodnik'] == row_data['Zawodnik']) & (df_internal['Typ_Raportu'] == row_data['Typ_Raportu']) & (df_internal['Data_dt'].dt.date == dzisiaj)]
+        else:
+            juz_jest = pd.DataFrame()
+            
         df_internal = df_internal.drop(columns=['Data_dt'], errors='ignore')
         
         if not juz_jest.empty:
@@ -446,6 +474,7 @@ if zawodnik:
                 if st.form_submit_button("WYŚLIJ RAPORT WELLNESS"):
                     timestamp = datetime.now(PL_TZ).strftime("%Y-%m-%d %H:%M:%S")
                     if save_to_gsheets({"Data": timestamp, "Typ_Raportu": "Wellness", "Zawodnik": zawodnik, "Sen": s1, "Zmeczenie": s2, "Bolesnosc": s3, "Stres": s4, "RPE": None, "Komentarz": k}):
+                        time.sleep(1.5)
                         st.rerun()
 
     with tab_rpe:
@@ -459,6 +488,7 @@ if zawodnik:
                 if st.form_submit_button("WYŚLIJ RAPORT RPE"):
                     timestamp = datetime.now(PL_TZ).strftime("%Y-%m-%d %H:%M:%S")
                     if save_to_gsheets({"Data": timestamp, "Typ_Raportu": "RPE", "Zawodnik": zawodnik, "Sen": None, "Zmeczenie": None, "Bolesnosc": None, "Stres": None, "RPE": rpe, "Komentarz": k_rpe}):
+                        time.sleep(1.5)
                         st.rerun()
 
     with tab_gym:
