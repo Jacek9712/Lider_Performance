@@ -324,61 +324,142 @@ try:
         if widok == "Dashboard Główny":
             st.markdown(f"<h2 style='text-align:left; color:{COLOR_PRIMARY};'>⚡ COMMAND CENTER ({wybrana_data})</h2>", unsafe_allow_html=True)
             
-            tab_status, tab_kalendarz = st.tabs(["⚡ STATUS NA DZIŚ", "📅 MIKROCYKL ZESPOŁU"])
+            # --- GLOBALNE STATYSTYKI NA DZIŚ ---
+            df_well_day = df[(df['Dzień'] == wybrana_data) & (df['Typ_Raportu'] == 'Wellness')].copy()
+            if not df_well_day.empty and 'Bolesnosc' in df_well_day.columns:
+                df_well_day['Bolesnosc'] = pd.to_numeric(df_well_day['Bolesnosc'], errors='coerce')
+                alerty_bolowe = df_well_day[df_well_day['Bolesnosc'] <= 2]
+            else:
+                alerty_bolowe = pd.DataFrame()
+            liczba_bolowych = len(alerty_bolowe)
             
-            with tab_status:
-                df_well_day = df[(df['Dzień'] == wybrana_data) & (df['Typ_Raportu'] == 'Wellness')].copy()
-                if not df_well_day.empty and 'Bolesnosc' in df_well_day.columns:
-                    df_well_day['Bolesnosc'] = pd.to_numeric(df_well_day['Bolesnosc'], errors='coerce')
-                    alerty_bolowe = df_well_day[df_well_day['Bolesnosc'] <= 2]
+            zawodnicy_well = df_well_day['Zawodnik'].unique() if not df_well_day.empty else []
+            brak_raportow_well = len(LISTA_ZAWODNIKOW) - len(zawodnicy_well)
+            
+            liczba_acwr_red = len(df_acwr_today[df_acwr_today['ACWR'] > 1.5]) if not df_acwr_today.empty else 0
+            
+            col_dash1, col_dash2, col_dash3 = st.columns(3)
+            with col_dash1:
+                klasa1 = "metric-card-red" if liczba_bolowych > 0 else "metric-card-green"
+                st.markdown(f"<div class='{klasa1}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
+                            f"<h3 style='margin:0; font-size:1rem; color:#424242;'>🔴 ALERTY BÓLOWE</h3>"
+                            f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{liczba_bolowych}</p>"
+                            f"</div>", unsafe_allow_html=True)
+            with col_dash2:
+                klasa2 = "metric-card-red" if liczba_acwr_red > 0 else "metric-card-green"
+                st.markdown(f"<div class='{klasa2}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
+                            f"<h3 style='margin:0; font-size:1rem; color:#424242;'>⚠️ ACWR > 1.5 (Ryzyko)</h3>"
+                            f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{liczba_acwr_red}</p>"
+                            f"</div>", unsafe_allow_html=True)
+            with col_dash3:
+                klasa3 = "metric-card-orange" if brak_raportow_well > 0 else "metric-card-green"
+                st.markdown(f"<div class='{klasa3}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
+                            f"<h3 style='margin:0; font-size:1rem; color:#424242;'>🟡 BRAK RAPORTÓW (WELL)</h3>"
+                            f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{brak_raportow_well}</p>"
+                            f"</div>", unsafe_allow_html=True)
+
+            tab_well, tab_rpe, tab_kalendarz = st.tabs(["📊 WELLNESS NA DZIŚ", "🏃 RPE NA DZIŚ", "📅 MIKROCYKL ZESPOŁU"])
+            
+            with tab_well:
+                st.markdown("#### SZCZEGÓŁY ALERTÓW BÓLOWYCH")
+                if not alerty_bolowe.empty:
+                    for _, row in alerty_bolowe.iterrows():
+                        kom = row.get('Komentarz', 'Brak uwag')
+                        if pd.isna(kom) or kom == "": kom = "Brak uwag"
+                        st.error(f"**{row['Zawodnik']}** - Bolesność: {row['Bolesnosc']}/5 | Uwagi: {kom}")
                 else:
-                    alerty_bolowe = pd.DataFrame()
-                liczba_bolowych = len(alerty_bolowe)
-                
-                zawodnicy_well = df_well_day['Zawodnik'].unique() if not df_well_day.empty else []
-                brak_raportow = len(LISTA_ZAWODNIKOW) - len(zawodnicy_well)
-                
-                liczba_acwr_red = len(df_acwr_today[df_acwr_today['ACWR'] > 1.5]) if not df_acwr_today.empty else 0
-                
-                col_dash1, col_dash2, col_dash3 = st.columns(3)
-                with col_dash1:
-                    klasa1 = "metric-card-red" if liczba_bolowych > 0 else "metric-card-green"
-                    st.markdown(f"<div class='{klasa1}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
-                                f"<h3 style='margin:0; font-size:1rem; color:#424242;'>🔴 ALERTY BÓLOWE</h3>"
-                                f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{liczba_bolowych}</p>"
-                                f"</div>", unsafe_allow_html=True)
-                with col_dash2:
-                    klasa2 = "metric-card-red" if liczba_acwr_red > 0 else "metric-card-green"
-                    st.markdown(f"<div class='{klasa2}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
-                                f"<h3 style='margin:0; font-size:1rem; color:#424242;'>⚠️ ACWR > 1.5 (Ryzyko)</h3>"
-                                f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{liczba_acwr_red}</p>"
-                                f"</div>", unsafe_allow_html=True)
-                with col_dash3:
-                    klasa3 = "metric-card-orange" if brak_raportow > 0 else "metric-card-green"
-                    st.markdown(f"<div class='{klasa3}' style='padding:20px; border-radius:10px; margin-bottom:15px;'>"
-                                f"<h3 style='margin:0; font-size:1rem; color:#424242;'>🟡 BRAK RAPORTÓW DZIŚ</h3>"
-                                f"<p style='font-size:2.5rem; font-weight:bold; margin:0; color:#212121;'>{brak_raportow}</p>"
-                                f"</div>", unsafe_allow_html=True)
+                    st.success("Brak alertów bólowych w drużynie!")
 
                 st.write("---")
-                col_det1, col_det2 = st.columns(2)
-                with col_det1:
-                    st.markdown("#### SZCZEGÓŁY ALERTÓW BÓLOWYCH")
-                    if not alerty_bolowe.empty:
-                        for _, row in alerty_bolowe.iterrows():
-                            kom = row.get('Komentarz', 'Brak uwag')
-                            if pd.isna(kom) or kom == "": kom = "Brak uwag"
-                            st.error(f"**{row['Zawodnik']}** - Bolesność: {row['Bolesnosc']}/5 | Uwagi: {kom}")
-                    else:
-                        st.success("Brak alertów bólowych w drużynie!")
+                st.markdown("#### 📋 TABELA GOTOWOŚCI (READINESS)")
+                if not df_well_day.empty:
+                    for col in kolumny_do_sumy:
+                        if col in df_well_day.columns:
+                            df_well_day[col] = pd.to_numeric(df_well_day[col], errors='coerce').fillna(0)
+                    
+                    ready_data = []
+                    for z in df_well_day['Zawodnik'].unique():
+                        z_data = df_well_day[df_well_day['Zawodnik'] == z].iloc[-1]
+                        status_time = "🟢 O CZASIE" if z_data['Godzina_H'] < GODZINA_WELLNESS else "🟡 SPÓŹNIONY"
+                        sen_val = pd.to_numeric(z_data.get('Sen', 0), errors='coerce')
+                        zmeczenie_val = pd.to_numeric(z_data.get('Zmeczenie', 0), errors='coerce')
+                        bolesnosc_val = pd.to_numeric(z_data.get('Bolesnosc', 0), errors='coerce')
+                        stres_val = pd.to_numeric(z_data.get('Stres', 0), errors='coerce')
+                        ment_val = pd.to_numeric(z_data.get('Zmeczenie_Mentalne', 0), errors='coerce')
                         
-                with col_det2:
-                    st.markdown("#### LISTA BRAKUJĄCYCH RAPORTÓW")
-                    if brak_raportow > 0:
-                        braki = [z for z in LISTA_ZAWODNIKOW if z not in zawodnicy_well]
-                        st.warning(", ".join(braki))
-                    else:
-                        st.success("Kompletny zespół przesłał raporty!")
+                        readiness_total = sum(filter(pd.notna, [sen_val, zmeczenie_val, bolesnosc_val, stres_val, ment_val]))
+                        
+                        wynik_dict = {
+                            "Zawodniczka": z, "Status": status_time, "Sen": int(sen_val) if pd.notna(sen_val) else 0, 
+                            "Zmęcz. Fiz.": int(zmeczenie_val) if pd.notna(zmeczenie_val) else 0, 
+                            "Bolesność": int(bolesnosc_val) if pd.notna(bolesnosc_val) else 0, 
+                            "Stres": int(stres_val) if pd.notna(stres_val) else 0
+                        }
+                        if 'Zmeczenie_Mentalne' in df_well_day.columns:
+                            wynik_dict["Zmęcz. Ment."] = int(ment_val) if pd.notna(ment_val) else 0
+                        wynik_dict["READINESS"] = int(readiness_total)
+                        ready_data.append(wynik_dict)
+                    
+                    df_ready = pd.DataFrame(ready_data).sort_values("READINESS", ascending=True)
+                    kol_do_kolorowania = ['Sen', 'Zmęcz. Fiz.', 'Bolesność', 'Stres']
+                    if 'Zmęcz. Ment.' in df_ready.columns: kol_do_kolorowania.append('Zmęcz. Ment.')
+                    
+                    def color_scale_1_5(val):
+                        try:
+                            v = float(val)
+                            if v <= 2: return 'background-color: #ffcccc; color: black;'
+                            if v == 3: return 'background-color: #ffffcc; color: black;'
+                            return 'background-color: #ccffcc; color: black;'
+                        except: return ''
+                    
+                    format_dict = {"READINESS": "{:d}/"+str(MAX_READINESS)}
+                    for k in kol_do_kolorowania: format_dict[k] = "{:d}"
+                        
+                    st.dataframe(df_ready.style.map(color_scale_1_5, subset=kol_do_kolorowania).background_gradient(subset=['READINESS'], cmap="RdYlGn", low=0, high=1).format(format_dict), hide_index=True, use_container_width=True)
+                    
+                    braki = [z for z in LISTA_ZAWODNIKOW if z not in df_well_day['Zawodnik'].unique()]
+                    if braki:
+                        st.warning(f"Brak raportów Wellness: {', '.join(braki)}")
+                else:
+                    st.info("Brak raportów Wellness na ten dzień.")
+
+            with tab_rpe:
+                st.markdown("#### 🏃 TABELA ZGŁOSZONEGO RPE")
+                df_rpe_raw_day = df[(df['Dzień'] == wybrana_data) & (df['Typ_Raportu'] == 'RPE')].copy()
+                
+                if not df_rpe_raw_day.empty:
+                    df_rpe_raw_day['RPE_num'] = pd.to_numeric(df_rpe_raw_day['RPE'], errors='coerce')
+                    srednie_rpe = df_rpe_raw_day['RPE_num'].mean()
+                    
+                    c_rpe1, c_rpe2 = st.columns(2)
+                    with c_rpe1: st.metric("Liczba Raportów RPE", f"{len(df_rpe_raw_day)} / {len(LISTA_ZAWODNIKOW)}")
+                    with c_rpe2: st.metric("Średnie RPE zespołu", f"{srednie_rpe:.2f}")
+                    
+                    rpe_summary = []
+                    for _, row in df_rpe_raw_day.iterrows():
+                        rpe_val = pd.to_numeric(row['RPE'], errors='coerce')
+                        rpe_summary.append({
+                            "Zawodniczka": row['Zawodnik'], "RPE": int(rpe_val) if pd.notna(rpe_val) else 0, 
+                            "Komentarz": row['Komentarz']
+                        })
+                    df_rpe_summary = pd.DataFrame(rpe_summary).sort_values("RPE", ascending=False)
+                    
+                    def color_rpe_scale(val):
+                        try:
+                            v = float(val)
+                            if v <= 3: return 'background-color: #ccffcc; color: black;'
+                            if v <= 6: return 'background-color: #ffffcc; color: black;'
+                            if v <= 8: return 'background-color: #ffebcc; color: black;'
+                            return 'background-color: #ffcccc; color: black;'
+                        except: return ''
+                            
+                    st.dataframe(df_rpe_summary.style.map(color_rpe_scale, subset=['RPE']), use_container_width=True, hide_index=True)
+                    
+                    braki_rpe = [z for z in LISTA_ZAWODNIKOW if z not in df_rpe_raw_day['Zawodnik'].unique()]
+                    if braki_rpe:
+                        st.warning(f"Brak raportów RPE: {', '.join(braki_rpe)}")
+                else:
+                    st.info("Brak raportów RPE na ten dzień.")
                         
             with tab_kalendarz:
                 st.markdown("### 📅 TYGODNIOWY PLAN TRENINGOWY")
