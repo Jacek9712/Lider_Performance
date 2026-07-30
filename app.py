@@ -457,7 +457,8 @@ else:
     zawodnik = None
 
 if zawodnik:
-    tab_well, tab_rpe, tab_gym, tab_cal, tab_hist = st.tabs(["📊 WELLNESS", "🏃 RPE", "🏋️ SIŁOWNIA", "📅 MIKROCYKL", "📈 HISTORIA"])
+    # Tymczasowe ukrycie zakładek Siłownia i Historia (zostawiamy 3 główne)
+    tab_well, tab_rpe, tab_cal = st.tabs(["📊 WELLNESS", "🏃 RPE", "📅 MIKROCYKL"])
 
     with tab_well:
         if check_today_report(zawodnik, "Wellness"):
@@ -491,7 +492,7 @@ if zawodnik:
                         time.sleep(1.5)
                         st.rerun()
 
-    with tab_gym:
+    if False: # Tymczasowo wyłączona zakładka: with tab_gym:
         # Odczyt wyników w tle do weryfikacji progresu
         try:
             df_wyniki_silownia_cache = conn.read(worksheet="Wyniki_Silownia", ttl=60)
@@ -679,54 +680,15 @@ if zawodnik:
                     total_elements += 1
                     
                 if plan.get("silownia", []):
-                    tytul_dnia = plan.get("tytul", "")
-                    if tytul_dnia and "Plan Grupowy" not in tytul_dnia and "Plan Indywidualny" not in tytul_dnia:
-                        content_tags += f'<div class="cal-exercise-tag">🏋️ {tytul_dnia[:20]+"..." if len(tytul_dnia)>22 else tytul_dnia}</div>'
-                        total_elements += 1
-                    else:
-                        for sl in plan["silownia"]:
-                            cz_sl = parsuj_cwiczenie(sl)["nazwa"]
-                            content_tags += f'<div class="cal-exercise-tag">🏋️ {cz_sl[:15]+"..." if len(cz_sl)>18 else cz_sl}</div>'
-                            total_elements += 1
-                
-            if total_elements == 0: 
-                content_tags = '<div class="cal-empty-tag">Brak planu (Wolne)</div>'
-                
-            grid_html += f'<div class="{cell_class}"><div class="{header_class}">{dzien_label}</div><div class="calendar-date">{data_str}</div><div class="calendar-cell-content">{content_tags}</div></div>'
-            
-        grid_html += '</div>'
-        st.markdown(grid_html, unsafe_allow_html=True)
-        
-        st.markdown("<br><h4>🔍 SZCZEGÓŁOWY PODGLĄD DNIA</h4>", unsafe_allow_html=True)
-        
-        default_index = dzis_prawdziwe.weekday() if st.session_state.week_offset == 0 else 0
-        wybrany_dzien_pl = st.selectbox("WYBIERZ DZIEŃ Z WIDOCZNEGO TYGODNIA, ABY ZOBACZYĆ PEŁNY PLAN:", dni_tygodnia_pl, index=default_index, key="day_selector_microcycle")
-        
-        wybrany_index = dni_tygodnia_pl.index(wybrany_dzien_pl)
-        wybrany_dzien_date = poniedzialek_mikrocyklu + timedelta(days=wybrany_index)
-        plany_dnia = get_gym_plan_for_date(zawodnik, wybrany_dzien_date)
-        
-        has_any = any(p.get("silownia", []) or p.get("regeneracja", []) for p in plany_dnia)
-        
-        if has_any:
-            for plan in plany_dnia:
-                rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
-                st.markdown(f"#### 📌 {plan['tytul'].upper()} <br><span style='font-size:0.8rem; color:#666;'>{rodzaj_tag}</span>", unsafe_allow_html=True)
-                
-                if plan.get("regeneracja", []):
-                    st.success("🌿 Zaplanowana regeneracja / odnowa biologiczna / inne:")
-                    for idx, akt in enumerate(plan["regeneracja"]): 
-                        st.markdown(f"**{idx+1}.** {parsuj_cwiczenie(akt)['nazwa']}")
-                if plan.get("silownia", []):
-                    st.info("🏋️ Zaplanowany trening siłowy:")
-                    for idx, cwiczenie in enumerate(plan["silownia"]):
-                        cw_dane = parsuj_cwiczenie(cwiczenie)
-                        st.markdown(f"**{idx+1}. {cw_dane['nazwa']}** (Serii: {cw_dane['serie']})")
-                st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
-        else:
-            st.info(f"ℹ️ Brak zaplanowanych jednostek na dzień {wybrany_dzien_date.strftime('%d.%m.%Y')}. Odpoczywaj!")
+                st.info("🏋️ Zaplanowany trening siłowy:")
+                for idx, cwiczenie in enumerate(plan["silownia"]):
+                    cw_dane = parsuj_cwiczenie(cwiczenie)
+                    st.markdown(f"**{idx+1}. {cw_dane['nazwa']}** (Serii: {cw_dane['serie']})")
+            st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+    else:
+        st.info(f"ℹ️ Brak zaplanowanych jednostek na dzień {wybrany_dzien_date.strftime('%d.%m.%Y')}. Odpoczywaj!")
 
-    with tab_hist:
+    if False: # Tymczasowo wyłączona zakładka: with tab_hist:
         st.markdown(f"<h3 style='text-align: center; color: {COLOR_PRIMARY};'>📈 TWOJA HISTORIA TRENINGÓW</h3>", unsafe_allow_html=True)
         
         try:
