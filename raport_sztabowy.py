@@ -10,36 +10,25 @@ import os
 import numpy as np
 import re
 
-# --- KONFIGURACJA KLUBU ---
-COLOR_PRIMARY = "#006633"   # Zieleń Warty
-COLOR_BG = "#F1F8E9"
-COLOR_TEXT = "#1B5E20"
+# --- KONFIGURACJA KLUBU (BARWY LIDER SWARZĘDZ) ---
+COLOR_PRIMARY = "#D32F2F"   # Głęboka czerwień z logo
+COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
+COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
-PASSWORD_TRENER = "Warta!"
+PASSWORD_TRENER = "Lider!"  # Zaktualizowane hasło dla sztabu
 GODZINA_WELLNESS = 10 
 GODZINA_RPE = 17
 
-st.set_page_config(page_title="Warta Poznań - Sztab", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Lider Swarzędz - Sztab", page_icon="🏀", layout="wide")
 
-# --- LISTY ZAWODNIKÓW I GRUP (AWARYJNY FALLBACK) ---
+# --- LISTY ZAWODNICZEK I GRUP (AWARYJNY FALLBACK) ---
 FALLBACK_LISTA_ZAWODNIKOW = sorted([
-    "Adrian Wnuk", "Bartosz Lelito", "Bartosz Piechowiak", "Dima Avdieiev", "Filip Jakubowski", 
-    "Igor Kornobis", "Jakub Kendzia", "Jan Niedzielski", 
-    "Kacper Lepczyński", "Kacper Rychert", "Kamil Kumoch", 
-    "Karol Łysiak", "Leo Przybylak", "Marcel Stefaniak", "Marcel Zylla", 
-    "Mateusz Stanek", "Michał Smoczyński", "Patryk Kusztal", "Paweł Kwiatkowski", 
-    "Oskar Mazurkiewicz", "Sebastian Steblecki", "Szymon Zalewski", "Tomasz Wojcinowicz", "Aleksander Wołczek", "Jakub Apolinarski", "Arkadiusz Najemski", "Oleksandr Azatskyi", "Mikołaj Baran", "Antoni Młynarczyk"
+    "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
+    "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
+    "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
+    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
 ])
 
-FALLBACK_GRUPY_LISTA = [
-    "Grupa A", 
-    "Grupa B", 
-    "Grupa C",
-    "Bramkarze", 
-    "Grupa Siła / Rebuilding", 
-    "Grupa Prewencja / Powrót po kontuzji", 
-    "Grupa Dynamiczna / Moc"
-]
 
 # --- ŁADOWANIE DANYCH Z GSHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -95,7 +84,7 @@ st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
     
-    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #E8F5E9 100%) !important; }}
+    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
     html, body, [class*="st-"], .stMarkdown, label, p, span {{ font-family: 'Anton', sans-serif !important; color: {COLOR_TEXT}; }}
     
     /* NAPRAWA: Zabezpieczenie ikon systemowych Streamlit przed nadpisaniem czcionki Anton */
@@ -110,7 +99,7 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
     }}
     .template-box {{
-        background-color: #E8F5E9; padding: 15px; border-radius: 10px; border: 1px solid #C8E6C9; margin-bottom: 20px;
+        background-color: #FFEBEE; padding: 15px; border-radius: 10px; border: 1px solid #FFCDD2; margin-bottom: 20px;
     }}
     .metric-card-red {{ background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); border-left: 5px solid #D32F2F; }}
     .metric-card-orange {{ background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border-left: 5px solid #F57C00; }}
@@ -125,8 +114,8 @@ st.markdown(f"""
     .calendar-cell-header {{ font-size: 0.85rem; font-weight: bold; color: {COLOR_PRIMARY}; text-transform: uppercase; margin-bottom: 2px; }}
     .calendar-cell-header.today-text {{ color: #D32F2F !important; }}
     .calendar-cell-date {{ font-size: 0.72rem; color: #666; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
-    .staff-plan-tag {{ background: #F1F8E9; border: 1px solid #C8E6C9; border-left: 4px solid {COLOR_PRIMARY}; padding: 6px; margin-bottom: 6px; border-radius: 6px; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
-    .staff-plan-group {{ font-weight: bold; color: #1B5E20; display: block; font-size: 0.65rem; text-transform: uppercase; margin-bottom: 2px; }}
+    .staff-plan-tag {{ background: #FFEBEE; border: 1px solid #FFCDD2; border-left: 4px solid {COLOR_PRIMARY}; padding: 6px; margin-bottom: 6px; border-radius: 6px; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
+    .staff-plan-group {{ font-weight: bold; color: {COLOR_TEXT}; display: block; font-size: 0.65rem; text-transform: uppercase; margin-bottom: 2px; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -197,9 +186,10 @@ def load_data(worksheet_name="Arkusz1"):
         return pd.DataFrame()
 
 def get_logo():
-    logo_path = "herb.png"
-    if os.path.exists(logo_path): return logo_path
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Warta_Pozna%C5%84_logo.svg/1200px-Warta_Pozna%C5%84_logo.svg.png"
+    possible_files = ["IMG_3658.PNG", "lider.png", "logo.png", "logo.jpg"]
+    for f in possible_files:
+        if os.path.exists(f): return f
+    return "IMG_3658.PNG"
 
 col_l1, col_l2, col_l3 = st.columns([1, 0.5, 1])
 with col_l2:
@@ -269,7 +259,7 @@ try:
             st.write("---")
             st.markdown("**STATUS BAZY DANYCH:**")
             if STATUS_GRUP == "OK":
-                st.success("✅ Zawodnicy i Grupy zsynchronizowane.")
+                st.success("✅ Zawodniczki i Grupy zsynchronizowane.")
             else:
                 st.error(f"⚠️ **Awaryjny kod.**<br>Powód: {STATUS_GRUP}", icon="🚨")
 
@@ -306,7 +296,7 @@ try:
 
         # --- LOGIKA WIDOKÓW ---
         if widok == "Dashboard Główny":
-            st.markdown(f"<h2 style='text-align:left; color:#1B5E20;'>⚡ COMMAND CENTER ({wybrana_data})</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align:left; color:{COLOR_PRIMARY};'>⚡ COMMAND CENTER ({wybrana_data})</h2>", unsafe_allow_html=True)
             
             tab_status, tab_kalendarz = st.tabs(["⚡ STATUS NA DZIŚ", "📅 MIKROCYKL ZESPOŁU"])
             
@@ -424,7 +414,6 @@ try:
                                 
                                 if regen and regen != 'nan':
                                     ikona = "🌿"
-                                    # POPRAWKA: Pokazujemy treść regeneracji, a nie domyślny napis
                                     krotki_regen = regen[:35] + "..." if len(regen) > 35 else regen
                                     opis = tytul if tytul else krotki_regen
                                 elif cw1 and cw1 != 'nan':
@@ -551,7 +540,7 @@ try:
             with c_conf1:
                 czas_minut = st.number_input("Czas trwania sesji (min):", min_value=15, max_value=240, value=90, step=5)
             with c_conf2:
-                zawodnicy_na_treningu = st.multiselect("Odhacz zawodników biorących udział w tej sesji:", options=LISTA_ZAWODNIKOW, default=LISTA_ZAWODNIKOW)
+                zawodnicy_na_treningu = st.multiselect("Odhacz zawodniczki biorące udział w tej sesji:", options=LISTA_ZAWODNIKOW, default=LISTA_ZAWODNIKOW)
 
             df_rpe_filtered = df_rpe_raw_day[df_rpe_raw_day['Zawodnik'].isin(zawodnicy_na_treningu)].copy()
             
@@ -596,7 +585,7 @@ try:
 
         # --- PANEL: ANALIZA I KREATOR SIŁOWNI ORAZ REGENERACJI ---
         elif widok == "Siłownia i Regeneracja":
-            tab_gym_results, tab_plan_gym, tab_plan_regen = st.tabs(["📊 WYNIKI ZAWODNIKÓW", "🏋️ ZAPLANUJ SIŁOWNIĘ", "🌿 ZAPLANUJ REGENERACJĘ"])
+            tab_gym_results, tab_plan_gym, tab_plan_regen = st.tabs(["📊 WYNIKI ZAWODNICZEK", "🏋️ ZAPLANUJ SIŁOWNIĘ", "🌿 ZAPLANUJ REGENERACJĘ"])
             
             with tab_gym_results:
                 st.subheader(f"🏋️ RAPORT TRENINGU Z DNIA: {wybrana_data}")
@@ -614,7 +603,7 @@ try:
                 if not df_gym.empty:
                     gym_results = []
                     for _, row in df_gym.iterrows():
-                        zawodnik_wynik = row.get('Zawodnik', 'Nieznany')
+                        zawodnik_wynik = row.get('Zawodnik', 'Nieznana')
                         tonaz = row.get('Tonaz_Calkowity_KG', 0.0)
                         uwagi = row.get('Uwagi', 'Brak')
                         if pd.isna(uwagi) or str(uwagi).strip() == "": uwagi = "Brak"
@@ -634,22 +623,22 @@ try:
                                     cwiczenia_zrealizowane.append(f"🏋️ {c_nazwa} ({', '.join(serie_text)}) -> Suma: {c_suma}kg")
                                     
                         gym_results.append({
-                            "Zawodnik": zawodnik_wynik, 
+                            "Zawodniczka": zawodnik_wynik, 
                             "Wstępny tonaż (kg)": int(tonaz), 
                             "Zrealizowany trening (Główne)": "\n".join(cwiczenia_zrealizowane) if cwiczenia_zrealizowane else "Tylko akcesoryjne / Brak pomiarów",
-                            "Ogólne uwagi zawodnika": uwagi
+                            "Ogólne uwagi": uwagi
                         })
                     
                     if gym_results:
                         df_gym_results = pd.DataFrame(gym_results)
-                        st.dataframe(df_gym_results[['Zawodnik', "Wstępny tonaż (kg)", "Ogólne uwagi zawodnika"]], use_container_width=True, hide_index=True)
+                        st.dataframe(df_gym_results[['Zawodniczka', "Wstępny tonaż (kg)", "Ogólne uwagi"]], use_container_width=True, hide_index=True)
                         
                         st.write("---")
                         st.markdown("#### 🔍 DETALICZNA ANALIZA WYBRANEJ AKTYWNOŚCI")
-                        wybrany_gracz_gym = st.selectbox("Wybierz zawodnika, aby zobaczyć szczegóły:", options=df_gym_results['Zawodnik'].unique())
+                        wybrany_gracz_gym = st.selectbox("Wybierz zawodniczkę, aby zobaczyć szczegóły:", options=df_gym_results['Zawodniczka'].unique())
                         if wybrany_gracz_gym:
-                            gracz_row = df_gym_results[df_gym_results['Zawodnik'] == wybrany_gracz_gym].iloc[0]
-                            st.info(f"**SUMARYCZNE OBCIĄŻENIE:** {gracz_row['Wstępny tonaż (kg)']} kg  |  **UWAGI ZAWODNIKA:** {gracz_row['Ogólne uwagi zawodnika']}")
+                            gracz_row = df_gym_results[df_gym_results['Zawodniczka'] == wybrany_gracz_gym].iloc[0]
+                            st.info(f"**SUMARYCZNE OBCIĄŻENIE:** {gracz_row['Wstępny tonaż (kg)']} kg  |  **UWAGI:** {gracz_row['Ogólne uwagi']}")
                             for linia in gracz_row['Zrealizowany trening (Główne)'].split("\n"): st.write(f"• {linia}")
                 else:
                     st.info(f"Brak zapisanych treningów z ciężarem w dniu {wybrana_data}.")
@@ -708,11 +697,11 @@ try:
                     
                     opcje_adresatow = ["Wszyscy"] + GRUPY_LISTA + LISTA_ZAWODNIKOW
                     adresat_planu = st.selectbox(
-                        "Wybierz adresata planu (Grupa z arkusza lub konkretny Zawodnik):",
+                        "Wybierz adresata planu (Grupa z arkusza lub konkretna Zawodniczka):",
                         options=opcje_adresatow, index=0
                     )
                     
-                    wykluczeni = st.multiselect("Wyklucz zawodników z tego planu (opcjonalnie):", options=LISTA_ZAWODNIKOW)
+                    wykluczeni = st.multiselect("Wyklucz zawodniczki z tego planu (opcjonalnie):", options=LISTA_ZAWODNIKOW)
                     
                     st.markdown("### 🏋️ ĆWICZENIA (Z SERIAMI I CIĘŻARAMI)")
                     
@@ -915,11 +904,11 @@ try:
                     
                     opcje_adresatow = ["Wszyscy"] + GRUPY_LISTA + LISTA_ZAWODNIKOW
                     adresat_planu_reg = st.selectbox(
-                        "Wybierz adresata planu (Grupa z arkusza lub konkretny Zawodnik):",
+                        "Wybierz adresata planu (Grupa z arkusza lub konkretna Zawodniczka):",
                         options=opcje_adresatow, index=0
                     )
                     
-                    wykluczeni_reg = st.multiselect("Wyklucz zawodników (opcjonalnie):", options=LISTA_ZAWODNIKOW, key="wykl_reg")
+                    wykluczeni_reg = st.multiselect("Wyklucz zawodniczki (opcjonalnie):", options=LISTA_ZAWODNIKOW, key="wykl_reg")
                     
                     regeneracja_opis = st.text_area(
                         "Zalecenia odnowy (np. Sauna, Basen, Rozciąganie, Odprawa wideo):", 
@@ -1115,7 +1104,7 @@ try:
             
             with tab_korelacja:
                 st.subheader("📈 KORELACJA KRZYŻOWA: Obciążenie z Wczoraj vs Gotowość na Dziś")
-                st.markdown("Wykres punktowy pomagający wyłapać graczy, którzy źle znoszą wysokie obciążenia.")
+                st.markdown("Wykres punktowy pomagający wyłapać zawodniczki, które źle znoszą wysokie obciążenia.")
                 
                 wczoraj_dt = dzis_dt - timedelta(days=1)
                 df_rpe_wczoraj = df_rpe_all[df_rpe_all['Dzień_dt'] == wczoraj_dt].copy()
@@ -1137,17 +1126,17 @@ try:
                         fig_scatter.add_hrect(y0=0, y1=MAX_READINESS*0.5, line_width=0, fillcolor="rgba(244, 67, 54, 0.15)", annotation_text="Strefa Zmęczenia", annotation_position="top left")
                         st.plotly_chart(fig_scatter, use_container_width=True)
                     else:
-                        st.warning("Brak zawodników, którzy zgłosili RPE wczoraj i Wellness dzisiaj.")
+                        st.warning("Brak zawodniczek, które zgłosiły RPE wczoraj i Wellness dzisiaj.")
                 else:
                     st.info("Brak wystarczających danych (RPE z wczoraj lub Wellness z dziś) do narysowania wykresu korelacji.")
 
         elif widok == "Profil Indywidualny":
-            zawodnik = st.selectbox("Wybierz zawodnika:", LISTA_ZAWODNIKOW)
+            zawodnik = st.selectbox("Wybierz zawodniczkę:", LISTA_ZAWODNIKOW)
             df_month = df[(df['Data'].dt.month == teraz.month) & (df['Data'].dt.year == teraz.year)].copy()
             p_data = df_month[df_month['Zawodnik'] == zawodnik]
             
             if p_data.empty: 
-                st.warning("Brak danych dla wybranego zawodnika w bieżącym miesiącu.")
+                st.warning("Brak danych dla wybranej zawodniczki w bieżącym miesiącu.")
             else:
                 tab_ind_well, tab_ind_science, tab_heatmap = st.tabs(["📊 WELLNESS & REGENERACJA", "🧠 OBCIĄŻENIA (ACWR ZEGAR)", "📅 HEATMAPA WELLNESS"])
                 
@@ -1177,10 +1166,10 @@ try:
                         fig_line = px.line(well_p.sort_values('Data'), x='Data', y='Sum_Readiness', title="Trend Gotowości (Miesiąc)")
                         st.plotly_chart(fig_line, use_container_width=True)
                     else:
-                        st.info("Brak raportów Wellness dla wybranego gracza w tym miesiącu.")
+                        st.info("Brak raportów Wellness dla wybranej zawodniczki w tym miesiącu.")
                 
                 with tab_ind_science:
-                    st.subheader(f"📈 ANALIZA OBCIĄŻEŃ GRACZA: {zawodnik.upper()}")
+                    st.subheader(f"📈 ANALIZA OBCIĄŻEŃ ZAWODNICZKI: {zawodnik.upper()}")
                     gracz_rpe = df_rpe_all[df_rpe_all['Zawodnik'] == zawodnik]
                     
                     if len(gracz_rpe) >= 3:
@@ -1218,7 +1207,7 @@ try:
                         fig_gauge.update_layout(height=250, margin=dict(l=20, r=20, t=30, b=20))
                         with c_sci1: st.plotly_chart(fig_gauge, use_container_width=True)
                         with c_sci2: st.metric("Monotonia Treningowa", f"{cur_monotony:.2f}", help="Średnia / Odchylenie Standardowe z 7 dni.")
-                        with c_sci3: st.metric("Napięcie (Strain)", f"{int(cur_strain)}", help="Skumulowany stres fizjologiczny zawodnika z ostatniego tygodnia.")
+                        with c_sci3: st.metric("Napięcie (Strain)", f"{int(cur_strain)}", help="Skumulowany stres fizjologiczny zawodniczki z ostatniego tygodnia.")
                             
                         fig_acwr_trend = go.Figure()
                         fig_acwr_trend.add_trace(go.Scatter(x=gracz_daily['Dzień_dt'], y=gracz_daily['ACWR_Ratio'], name='Wskaźnik ACWR', line=dict(color=COLOR_PRIMARY, width=3)))
@@ -1227,7 +1216,7 @@ try:
                         fig_acwr_trend.update_layout(title="Krzywa Zmęczenia do Formy (Wskaźnik ACWR)", yaxis_title="Współczynnik Ratio", xaxis_title="Data")
                         st.plotly_chart(fig_acwr_trend, use_container_width=True)
                     else:
-                        st.info("Zawodnik musi posiadać co najmniej 3 zgłoszone raporty RPE, aby obliczyć indywidualne trendy ACWR.")
+                        st.info("Zawodniczka musi posiadać co najmniej 3 zgłoszone raporty RPE, aby obliczyć indywidualne trendy ACWR.")
                 
                 with tab_heatmap:
                     st.subheader(f"📅 MIESIĘCZNA HEATMAPA WELLNESS")
@@ -1265,7 +1254,7 @@ try:
             tab_ai_pred, tab_ai_log = st.tabs(["🔮 PREDYKCJA AI (Algorytm)", "🚑 REJESTR URAZÓW (Baza dla ML)"])
             
             with tab_ai_pred:
-                st.markdown(f"<h2 style='text-align:left; color:#1B5E20;'>🧠 MODUŁ AI: PREDYKCJA RYZYKA ({wybrana_data})</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='text-align:left; color:{COLOR_PRIMARY};'>🧠 MODUŁ AI: PREDYKCJA RYZYKA ({wybrana_data})</h2>", unsafe_allow_html=True)
                 st.write("Algorytm krzyżuje aktualny wskaźnik ACWR, dzisiejsze samopoczucie oraz indywidualne odchylenia formy (Z-Score), aby oszacować % ryzyko kontuzji przeciążeniowej.")
                 
                 dzis_dt = pd.to_datetime(wybrana_data)
@@ -1360,12 +1349,12 @@ try:
 
             with tab_ai_log:
                 st.subheader("🚑 REJESTR URAZÓW (Baza treningowa dla Machine Learning)")
-                st.write("Wpisuj tutaj każdą kontuzję. Gdy zbierzemy odpowiednią liczbę przypadków, wytrenujemy model AI specyficzny dla Warty Poznań, który zastąpi obecny algorytm szacunkowy.")
+                st.write("Wpisuj tutaj każdą kontuzję. Gdy zbierzemy odpowiednią liczbę przypadków, wytrenujemy model AI specyficzny dla Lidera Swarzędz, który zastąpi obecny algorytm szacunkowy.")
                 
                 with st.form("injury_form", border=True):
                     col_i1, col_i2 = st.columns(2)
                     with col_i1:
-                        zawodnik_uraz = st.selectbox("Poszkodowany zawodnik:", LISTA_ZAWODNIKOW)
+                        zawodnik_uraz = st.selectbox("Poszkodowana zawodniczka:", LISTA_ZAWODNIKOW)
                         data_urazu = st.date_input("Data odniesienia urazu:", value=teraz.date())
                     with col_i2:
                         rodzaj_urazu = st.selectbox("Typ Urazu:", ["Mięśniowy (Naciągnięcie/Naderwanie)", "Mechaniczny (Staw/Kość)", "Przeciążeniowy (Ścięgno)", "Choroba / Wirus"])
@@ -1392,7 +1381,7 @@ try:
                         
                         updated_urazy = pd.concat([df_urazy, pd.DataFrame([nowy_uraz])], ignore_index=True)
                         conn.update(worksheet="Urazy", data=updated_urazy)
-                        st.success(f"✔ Uraz zawodnika {zawodnik_uraz} został zapisany w bazie szkoleniowej AI.")
+                        st.success(f"✔ Uraz zawodniczki {zawodnik_uraz} został zapisany w bazie szkoleniowej AI.")
                         st.cache_data.clear()
                         
                 try:
