@@ -96,9 +96,10 @@ st.markdown(f"""
     @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
     
     /* UKRYCIE MENU STREAMLIT I STOPKI (Z zachowaniem przycisku panelu bocznego) */
-    #MainMenu {{visibility: hidden;}} 
-    footer {{visibility: hidden;}} 
-    .stDeployButton {{display: none;}}
+    [data-testid="stToolbar"] {{visibility: hidden !important; display: none !important;}}
+    footer {{visibility: hidden !important; display: none !important;}}
+    #MainMenu {{visibility: hidden !important; display: none !important;}}
+    .stDeployButton {{display: none !important;}}
     
     .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
     html, body, [class*="st-"], .stMarkdown, label, p, span {{ font-family: 'Anton', sans-serif !important; color: {COLOR_TEXT}; }}
