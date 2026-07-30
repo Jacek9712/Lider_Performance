@@ -9,11 +9,11 @@ import time
 import re
 import plotly.express as px
 
-# --- KONFIGURACJA KLUBU (BARWY WARTY POZNAŃ) ---
-COLOR_PRIMARY = "#006633"   # Głęboka zieleń
-COLOR_SECONDARY = "#004d26" # Ciemniejsza zieleń dla kontrastu
-COLOR_BG = "#F1F8E9"        # Bardzo jasne zielone tło
-COLOR_TEXT = "#1B5E20"      # Ciemnozielony tekst
+# --- KONFIGURACJA KLUBU (BARWY LIDER SWARZĘDZ) ---
+COLOR_PRIMARY = "#D32F2F"   # Głęboka czerwień z logo
+COLOR_SECONDARY = "#B71C1C" # Ciemniejsza czerwień dla kontrastu
+COLOR_BG = "#FFEBEE"        # Bardzo jasne czerwone tło
+COLOR_TEXT = "#4A0404"      # Ciemnoczerwony/bordowy tekst
 PL_TZ = pytz.timezone('Europe/Warsaw')
 
 # --- DEFINICJA GRUP TRENINGOWYCH (AWARYJNY FALLBACK) ---
@@ -87,24 +87,22 @@ def normalizuj_df_arkusza(df):
 
 # Logo
 def get_logo():
-    possible_files = ["herb.png", "logo.png", "logo.jpg", "image_b1bd1c.png"]
+    possible_files = ["IMG_3658.PNG", "lider.png", "logo.png", "logo.jpg"]
     for f in possible_files:
         if os.path.exists(f): return f
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Warta_Pozna%C5%84_logo.svg/1200px-Warta_Pozna%C5%84_logo.svg.png"
+    return "IMG_3658.PNG" # Fallback do nazwy pliku Lidera
 
 LOGO_PATH = get_logo()
 
 # --- AKTUAL LISTA ZAWODNIKÓW ---
 LISTA_ZAWODNIKOW = sorted([
-    "Adrian Wnuk", "Bartosz Lelito", "Bartosz Piechowiak", "Dima Avdieiev", "Filip Jakubowski", 
-    "Igor Kornobis", "Jakub Kendzia", "Jan Niedzielski", 
-    "Kacper Lepczyński", "Kacper Rychert", "Kamil Kumoch", 
-    "Karol Łysiak", "Leo Przybylak", "Marcel Stefaniak", "Marcel Zylla", 
-    "Mateusz Stanek", "Michał Smoczyński", "Patryk Kusztal", "Paweł Kwiatkowski", 
-    "Oskar Mazurkiewicz", "Sebastian Steblecki", "Szymon Zalewski", "Tomasz Wojcinowicz", "Aleksander Wołczek", "Jakub Apolinarski", "Arkadiusz Najemski", "Oleksandr Azatskyi", "Mikołaj Baran", "Antoni Młynarczyk"
+    "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
+    "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
+    "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
+    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
 ])
 
-st.set_page_config(page_title="Warta Poznań - Performance", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="Lider Swarzędz - Performance", page_icon="🏀", layout="centered")
 
 # Inicjalizacja stanu sesji
 if "manual_selection" not in st.session_state: st.session_state.manual_selection = None
@@ -370,7 +368,7 @@ elif not st.session_state.logout_triggered:
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
-    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #E8F5E9 100%) !important; }}
+    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
     #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}} header {{visibility: hidden;}}
     
     html, body, [class*="st-"], .stMarkdown, .stSelectbox, .stSlider, .stTextArea, label, p, span {{ font-family: 'Anton', sans-serif !important; color: {COLOR_TEXT}; }}
@@ -383,10 +381,13 @@ st.markdown(f"""
     .logo-container {{ display: flex; justify-content: center; align-items: center; width: 100%; margin: 0 auto; padding: 10px 0; }}
     [data-testid="stForm"] {{ background-color: #FFFFFF !important; border: 1px solid #d1d9e6 !important; padding: 25px !important; border-radius: 20px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
     button[kind="formSubmit"], .nav-button button, .logout-btn button {{ background-color: {COLOR_PRIMARY} !important; color: white !important; font-weight: bold !important; border-radius: 10px !important; width: 100% !important; border: none !important; padding: 10px !important; margin-top: 10px !important; text-transform: uppercase; }}
+    
+    /* Wellness legend zachowuje kolory zielony-żółty-czerwony dla intuicyjności */
     .wellness-legend {{ background: linear-gradient(90deg, #FFEBEE 0%, #FFFDE7 50%, #E8F5E9 100%); padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 20px; text-align: center; }}
     .legend-item {{ flex: 1; font-size: 0.8rem; }}
+    
     .login-info {{ background-color: {COLOR_PRIMARY}; color: white !important; padding: 8px; border-radius: 10px; text-align: center; margin: 0 auto 5px auto; max-width: 300px; font-weight: bold; font-size: 0.9rem; }}
-    .already-sent {{ background-color: #E8F5E9; color: #2E7D32; padding: 25px; border-radius: 20px; text-align: center; font-weight: bold; border: 2px solid #C8E6C9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+    .already-sent {{ background-color: #FFEBEE; color: #B71C1C; padding: 25px; border-radius: 20px; text-align: center; font-weight: bold; border: 2px solid #FFCDD2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
     .calendar-grid {{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; width: 100%; margin-bottom: 20px; }}
     @media (max-width: 900px) {{ .calendar-grid {{ grid-template-columns: repeat(4, 1fr); }} }}
     @media (max-width: 600px) {{ .calendar-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
@@ -397,7 +398,7 @@ st.markdown(f"""
     .calendar-cell-header.today-text {{ color: #D32F2F !important; }}
     .calendar-cell-date {{ font-size: 0.72rem; color: #666; margin-bottom: 8px; }}
     .calendar-cell-content {{ display: flex; flex-direction: column; gap: 4px; align-items: stretch; text-align: left; }}
-    .cal-exercise-tag {{ background: #E8F5E9; color: #2E7D32; font-size: 0.68rem; padding: 3px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; border: 1px solid #C8E6C9; }}
+    .cal-exercise-tag {{ background: #FFEBEE; color: #B71C1C; font-size: 0.68rem; padding: 3px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; border: 1px solid #FFCDD2; }}
     .cal-rec-tag {{ background: #E3F2FD; color: #1565C0; font-size: 0.68rem; padding: 3px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; border: 1px solid #BBDEFB; }}
     .cal-empty-tag {{ color: #999; font-size: 0.68rem; text-align: center; margin-top: 15px; font-style: italic; }}
     .recovery-activity-box {{ background-color: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 12px; padding: 15px; margin-bottom: 15px; color: #0D47A1; }}
@@ -485,16 +486,16 @@ if zawodnik:
             st.markdown(f'<div class="already-sent"><p style="font-size: 1.2rem; margin-bottom: 10px;">🏋️ WITAJ {zawodnik.split()[0]}!</p><p>TWÓJ RAPORT Z TRENINGU SIŁOWEGO ZOSTAŁ JUŻ ZAPISANY.</p></div>', unsafe_allow_html=True)
             
             if has_gym:
-                st.markdown("<br><h3 style='text-align: center; color: #006633;'>📋 TWÓJ DZISIEJSZY PLAN</h3>", unsafe_allow_html=True)
+                st.markdown(f"<br><h3 style='text-align: center; color: {COLOR_PRIMARY};'>📋 TWÓJ DZISIEJSZY PLAN</h3>", unsafe_allow_html=True)
                 for plan in plany_na_dzis:
                     silowe = plan.get("silownia", [])
                     if not silowe: continue
                     
                     rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
                     st.markdown(f"""
-                    <div style="background-color: #E8F5E9; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px; margin-top: 15px;">
+                    <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px; margin-top: 15px;">
                         <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
-                        <span style="font-size: 1.2rem; font-weight: bold; color: #1B5E20;">{plan['tytul'].upper()}</span>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -502,7 +503,7 @@ if zawodnik:
                         cw_dane = parsuj_cwiczenie(cwiczenie)
                         typ_cwiczenia = "Główne" if cw_dane["glowne"] else "Akcesoryjne"
                         
-                        link_html = f" <br><a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-top: 5px; padding: 3px 8px; background-color: #D32F2F; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.75rem;'>▶️ OBEJRZYJ WIDEO</a>" if cw_dane["link"] else ""
+                        link_html = f" <br><a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-top: 5px; padding: 3px 8px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.75rem;'>▶️ OBEJRZYJ WIDEO</a>" if cw_dane["link"] else ""
                         
                         st.markdown(f"**{idx+1}. {cw_dane['nazwa']}** <br><span style='font-size:0.85rem; color:#555;'>Serie: {cw_dane['serie']} | Typ: {typ_cwiczenia}</span>{link_html}", unsafe_allow_html=True)
                         
@@ -536,9 +537,9 @@ if zawodnik:
                         
                         rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
                         st.markdown(f"""
-                        <div style="background-color: #E8F5E9; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px;">
+                        <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px;">
                             <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
-                            <span style="font-size: 1.2rem; font-weight: bold; color: #1B5E20;">{plan['tytul'].upper()}</span>
+                            <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -558,7 +559,7 @@ if zawodnik:
                                 st.markdown(f"<div style='font-size:0.8rem; color:#E65100; background:#FFF3E0; padding:4px 8px; border-radius:4px; display:inline-block; margin-bottom:8px;'>🎯 <b>Ostatni wynik ({ostatni['data']}):</b> {ostatni['kg']} kg</div>", unsafe_allow_html=True)
                             
                             if cw_dane['link']:
-                                st.markdown(f"<a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-bottom: 10px; padding: 4px 10px; background-color: #D32F2F; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.8rem;'>▶️ OBEJRZYJ WIDEO INSTRUKTAŻOWE</a>", unsafe_allow_html=True)
+                                st.markdown(f"<a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-bottom: 10px; padding: 4px 10px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.8rem;'>▶️ OBEJRZYJ WIDEO INSTRUKTAŻOWE</a>", unsafe_allow_html=True)
                                 
                             if cw_dane['glowne']:
                                 seria_cols = st.columns(min(cw_dane['serie'], 5))
@@ -776,7 +777,7 @@ if zawodnik:
                         <div style="background: white; padding: 15px; border-radius: 15px; border: 1px solid #eee; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <b style="color: {COLOR_PRIMARY}; font-size: 1.1rem;">{data_str}</b>
-                                <span style="font-size: 0.8rem; background: #e8f5e9; padding: 4px 10px; border-radius: 10px; font-weight: bold; color: {COLOR_PRIMARY};">{row.get('Tonaz_Calkowity_KG', 0):.0f} kg łącznie</span>
+                                <span style="font-size: 0.8rem; background: {COLOR_BG}; padding: 4px 10px; border-radius: 10px; font-weight: bold; color: {COLOR_PRIMARY};">{row.get('Tonaz_Calkowity_KG', 0):.0f} kg łącznie</span>
                             </div>
                         """, unsafe_allow_html=True)
                         
