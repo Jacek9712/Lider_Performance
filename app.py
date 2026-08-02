@@ -483,7 +483,7 @@ if zawodnik:
             st.markdown(f'<div class="already-sent"><p style="font-size: 1.2rem; margin-bottom: 10px;">✅ CZEŚĆ {zawodnik.split()[0]}!</p><p>TWÓJ DZISIEJSZY RAPORT RPE ZOSTAŁ JUŻ WYSŁANY.</p></div>', unsafe_allow_html=True)
         else:
             with st.form("rpe_form", border=True):
-                st.markdown("<p style='text-align: center;'>PODAJ INTENSYWNOŚĆ TRENINGU BOISKOWEGO</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center;'>PODAJ INTENSYWNOŚĆ TRENINGU</p>", unsafe_allow_html=True)
                 rpe = st.slider("SKALA RPE (0-10)", 0, 10, 5)
                 k_rpe = st.text_area("UWAGI DO TRENINGU", placeholder="Jak się czułeś?")
                 if st.form_submit_button("WYŚLIJ RAPORT RPE"):
