@@ -103,7 +103,7 @@ st.markdown(f"""
     .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
     
     /* Bezpieczne wymuszenie czcionki na całej aplikacji */
-    * [{ font-family: 'Anton', sans-serif !important; }]
+    * {{ font-family: 'Anton', sans-serif !important; }}
     html, body, [class*="st-"], .stMarkdown, label, p, span {{ color: {COLOR_TEXT}; }}
     
     /* NAPRAWA: Zabezpieczenie ikon systemowych Streamlit przed nadpisaniem czcionki Anton */
