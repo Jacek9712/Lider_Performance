@@ -92,14 +92,19 @@ def pobierz_szablony():
 
 # --- STYLE CSS ---
 st.markdown(f"""
-    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+    
+    /* Bezpieczne wymuszenie czcionki na konkretnych elementach aplikacji */
+    html, body, div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, input, select, textarea, [class*="st-"], [class*="css"] {{
+        font-family: 'Anton', sans-serif !important;
+    }}
+    
     [data-testid="stToolbar"] {{visibility: hidden !important; display: none !important;}}
     footer {{visibility: hidden !important; display: none !important;}}
     #MainMenu {{visibility: hidden !important; display: none !important;}}
     .stDeployButton {{display: none !important;}}
     .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
-    html, body, div, span, p, a, * {{ font-family: 'Anton', sans-serif !important; }}
     html, body, [class*="st-"], .stMarkdown, label, p, span {{ color: {COLOR_TEXT}; }}
     [data-testid="stIconMaterial"], [data-testid="stExpander"] summary span, .material-symbols-rounded, .streamlit-expander-icon {{ font-family: 'Material Symbols Rounded', sans-serif !important; }}
     h1, h2, h3, h4 {{ color: {COLOR_PRIMARY} !important; text-transform: uppercase; text-align: center; }}
