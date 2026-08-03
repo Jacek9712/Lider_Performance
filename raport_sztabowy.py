@@ -93,11 +93,9 @@ def pobierz_szablony():
 # --- STYLE CSS ---
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
-    
-    /* Bezpieczne wymuszenie czcionki na konkretnych elementach aplikacji */
+    /* Bezpieczne wymuszenie masywnej czcionki bez pobierania z zewnątrz */
     html, body, div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, input, select, textarea, [class*="st-"], [class*="css"] {{
-        font-family: 'Anton', sans-serif !important;
+        font-family: 'Impact', 'Arial Black', sans-serif !important;
     }}
     
     [data-testid="stToolbar"] {{visibility: hidden !important; display: none !important;}}
