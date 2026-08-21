@@ -27,7 +27,7 @@ FALLBACK_LISTA_ZAWODNIKOW = sorted([
     "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
     "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
     "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
-    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
+    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska", "Agata Siwińska"
 ])
 
 FALLBACK_GRUPY_LISTA = [
