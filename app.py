@@ -97,7 +97,7 @@ LISTA_ZAWODNIKOW = sorted([
     "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
     "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
     "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
-    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
+    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska", "Agata Siwińska"
 ])
 
 st.set_page_config(page_title="Lider Swarzędz - Performance", page_icon="🏀", layout="centered")
