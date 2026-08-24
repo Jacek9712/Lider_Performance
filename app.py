@@ -19,11 +19,10 @@ PL_TZ = pytz.timezone('Europe/Warsaw')
 # --- DEFINICJA GRUP TRENINGOWYCH (AWARYJNY FALLBACK) ---
 SLOWNIK_GRUP = {
     "Grupa A": [
-        "Dima Avdieiev", "Leo Przybylak", "Michał Smoczyński", "Bartosz Piechowiak", 
-        "Filip Jakubowski", "Jan Niedzielski", "Kacper Lepczyński", 
-        "Kacper Rychert", "Kamil Kumoch", "Karol Łysiak", "Marcel Stefaniak", 
-        "Mateusz Stanek", "Patryk Kusztal", "Paweł Kwiatkowski", "Oskar Mazurkiewicz", 
-        "Sebastian Steblecki", "Szymon Zalewski", "Tomasz Wojcinowicz"
+        "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
+        "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
+        "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
+        "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
     ]
 }
 
@@ -46,7 +45,7 @@ def parsuj_cwiczenie(val):
     
     opis_match = re.search(r"\[OPIS:(.*?)\]", val_norm, re.IGNORECASE)
     if not opis_match:
-        opis_match = re.search(r"\((.*?)\)", val_norm) # Wsparcie dla starych planów zapisanych w nawiasach
+        opis_match = re.search(r"\((.*?)\)", val_norm) 
     opis = opis_match.group(1).strip() if opis_match else ""
     
     link_match = re.search(r"\[LINK:(.*?)\]", val_norm, re.IGNORECASE)
@@ -54,7 +53,6 @@ def parsuj_cwiczenie(val):
     
     glowne = "[GLOWNE]" in val_norm.upper()
     
-    # Wyciąganie samej nazwy (usuwanie tagów)
     nazwa = re.sub(r"\[SERIE:\d+\].*", "", val_norm, flags=re.IGNORECASE)
     nazwa = re.sub(r"\[OPIS:.*?\].*", "", nazwa, flags=re.IGNORECASE)
     if not re.search(r"\[OPIS:", val_norm, re.IGNORECASE):
@@ -87,12 +85,9 @@ def normalizuj_df_arkusza(df):
 
 # Logo
 def get_logo():
-    # Przywrócono 'herb.png' jako główną nazwę pliku do wyszukania
     possible_files = ["herb.png", "IMG_3658.PNG", "img_3658.png", "lider.png", "logo.png", "logo.jpg"]
     for f in possible_files:
         if os.path.exists(f): return f
-    
-    # Bezpieczny fallback z internetu (ikona koszykówki), który zapobiegnie awarii ("crashem") aplikacji
     return "https://cdn-icons-png.flaticon.com/512/8054/8054009.png"
 
 LOGO_PATH = get_logo()
@@ -102,7 +97,7 @@ LISTA_ZAWODNIKOW = sorted([
     "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
     "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
     "Kamila Rogulska", "Weronika Stachowiak", "Natasza Stańko", 
-    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska", "Agata Siwińska"
+    "Aleksandra Szuba", "Magdalena Wojdalska", "Ida Zygmanowska"
 ])
 
 st.set_page_config(page_title="Lider Swarzędz - Performance", page_icon="🏀", layout="centered")
@@ -159,8 +154,10 @@ def check_today_report(zawodnik, typ):
     except:
         return False
 
+# ZABEZPIECZONA FUNKCJA ZAPISU (RACE CONDITION FIX)
 def save_to_gsheets(row_data):
     try:
+        # Wymuszenie odczytu z serwera z ttl=0 przed aktualizacją
         try:
             df_original = conn.read(worksheet="Arkusz1", ttl=0)
         except:
@@ -214,7 +211,7 @@ def save_to_gsheets(row_data):
         updated_df_internal.columns = final_cols
         
         conn.update(worksheet="Arkusz1", data=updated_df_internal)
-        st.cache_data.clear()
+        st.cache_data.clear() # Czyszczenie pamięci by każdy gracz miał czyste dane
         st.success("✔ RAPORT WYSŁANY!")
         return True
     except Exception as e:
@@ -234,6 +231,7 @@ def check_today_gym_report(zawodnik):
     except:
         return False
 
+# ZABEZPIECZONA FUNKCJA ZAPISU SIŁOWNI
 def save_gym_to_gsheets(row_data):
     try:
         try:
@@ -266,7 +264,6 @@ def save_gym_to_gsheets(row_data):
         return False
 
 def znajdz_ostatni_wynik(df_wyniki, zawodnik, nazwa_cwiczenia):
-    """Przeszukuje historię treningów zawodnika, by znaleźć ostatnie obciążenia dla danego ćwiczenia."""
     if df_wyniki is None or df_wyniki.empty or 'Zawodnik' not in df_wyniki.columns: return None
     df_m = df_wyniki[df_wyniki['Zawodnik'] == zawodnik].copy()
     if df_m.empty: return None
@@ -280,7 +277,6 @@ def znajdz_ostatni_wynik(df_wyniki, zawodnik, nazwa_cwiczenia):
     for _, row in df_m.iterrows():
         for i in range(1, 6):
             saved_name = str(row.get(f"Cwiczenie_{i}_Nazwa", ""))
-            # Nazwy w bazie mają format "[Tytul] Nazwa Cwiczenia", usuwamy nawias do porównania
             saved_name_clean = re.sub(r"\[.*?\]", "", saved_name).strip().lower()
             
             if target_clean in saved_name_clean:
@@ -385,11 +381,18 @@ elif not st.session_state.logout_triggered:
 # --- STYLIZACJA CSS ---
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
-    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
-    #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}} header {{visibility: hidden;}}
+    /* BEZPIECZNE UKRYWANIE MENU I WYMUSZANIE SPORTOWEJ CZCIONKI */
+    html, body, div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, input, select, textarea, [class*="st-"], [class*="css"] {{
+        font-family: 'Impact', 'Arial Black', sans-serif !important;
+    }}
     
-    html, body, [class*="st-"], .stMarkdown, .stSelectbox, .stSlider, .stTextArea, label, p, span {{ font-family: 'Anton', sans-serif !important; color: {COLOR_TEXT}; }}
+    [data-testid="stToolbar"] {{visibility: hidden !important; display: none !important;}}
+    footer {{visibility: hidden !important; display: none !important;}}
+    #MainMenu {{visibility: hidden !important; display: none !important;}}
+    .stDeployButton {{display: none !important;}}
+    
+    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
+    
     [data-testid="stIconMaterial"], [data-testid="stExpander"] summary span, .material-symbols-rounded, .streamlit-expander-icon {{ 
         font-family: 'Material Symbols Rounded', sans-serif !important; 
     }}
@@ -400,7 +403,6 @@ st.markdown(f"""
     [data-testid="stForm"] {{ background-color: #FFFFFF !important; border: 1px solid #d1d9e6 !important; padding: 25px !important; border-radius: 20px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
     button[kind="formSubmit"], .nav-button button, .logout-btn button {{ background-color: {COLOR_PRIMARY} !important; color: white !important; font-weight: bold !important; border-radius: 10px !important; width: 100% !important; border: none !important; padding: 10px !important; margin-top: 10px !important; text-transform: uppercase; }}
     
-    /* Wellness legend zachowuje kolory zielony-żółty-czerwony dla intuicyjności */
     .wellness-legend {{ background: linear-gradient(90deg, #FFEBEE 0%, #FFFDE7 50%, #E8F5E9 100%); padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 20px; text-align: center; }}
     .legend-item {{ flex: 1; font-size: 0.8rem; }}
     
@@ -483,7 +485,7 @@ if zawodnik:
             st.markdown(f'<div class="already-sent"><p style="font-size: 1.2rem; margin-bottom: 10px;">✅ CZEŚĆ {zawodnik.split()[0]}!</p><p>TWÓJ DZISIEJSZY RAPORT RPE ZOSTAŁ JUŻ WYSŁANY.</p></div>', unsafe_allow_html=True)
         else:
             with st.form("rpe_form", border=True):
-                st.markdown("<p style='text-align: center;'>PODAJ INTENSYWNOŚĆ TRENINGU</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center;'>PODAJ INTENSYWNOŚĆ TRENINGU BOISKOWEGO</p>", unsafe_allow_html=True)
                 rpe = st.slider("SKALA RPE (0-10)", 0, 10, 5)
                 k_rpe = st.text_area("UWAGI DO TRENINGU", placeholder="Jak się czułeś?")
                 if st.form_submit_button("WYŚLIJ RAPORT RPE"):
@@ -491,136 +493,6 @@ if zawodnik:
                     if save_to_gsheets({"Data": timestamp, "Typ_Raportu": "RPE", "Zawodnik": zawodnik, "Sen": None, "Zmeczenie": None, "Bolesnosc": None, "Stres": None, "RPE": rpe, "Komentarz": k_rpe}):
                         time.sleep(1.5)
                         st.rerun()
-
-    if False: # Tymczasowo wyłączona zakładka: with tab_gym:
-        # Odczyt wyników w tle do weryfikacji progresu
-        try:
-            df_wyniki_silownia_cache = conn.read(worksheet="Wyniki_Silownia", ttl=60)
-        except:
-            df_wyniki_silownia_cache = pd.DataFrame()
-            
-        juz_wyslano = check_today_gym_report(zawodnik)
-        plany_na_dzis = get_today_gym_plan(zawodnik)
-        has_gym = any(p.get("silownia", []) for p in plany_na_dzis)
-        
-        if juz_wyslano:
-            st.markdown(f'<div class="already-sent"><p style="font-size: 1.2rem; margin-bottom: 10px;">🏋️ WITAJ {zawodnik.split()[0]}!</p><p>TWÓJ RAPORT Z TRENINGU SIŁOWEGO ZOSTAŁ JUŻ ZAPISANY.</p></div>', unsafe_allow_html=True)
-            
-            if has_gym:
-                st.markdown(f"<br><h3 style='text-align: center; color: {COLOR_PRIMARY};'>📋 TWÓJ DZISIEJSZY PLAN</h3>", unsafe_allow_html=True)
-                for plan in plany_na_dzis:
-                    silowe = plan.get("silownia", [])
-                    if not silowe: continue
-                    
-                    rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
-                    st.markdown(f"""
-                    <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px; margin-top: 15px;">
-                        <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
-                        <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    for idx, cwiczenie in enumerate(silowe):
-                        cw_dane = parsuj_cwiczenie(cwiczenie)
-                        typ_cwiczenia = "Główne" if cw_dane["glowne"] else "Akcesoryjne"
-                        
-                        link_html = f" <br><a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-top: 5px; padding: 3px 8px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.75rem;'>▶️ OBEJRZYJ WIDEO</a>" if cw_dane["link"] else ""
-                        
-                        st.markdown(f"**{idx+1}. {cw_dane['nazwa']}** <br><span style='font-size:0.85rem; color:#555;'>Serie: {cw_dane['serie']} | Typ: {typ_cwiczenia}</span>{link_html}", unsafe_allow_html=True)
-                        
-                        if cw_dane['opis']:
-                            st.markdown(f"<div style='background-color:#E3F2FD; color:#0D47A1; padding:6px 10px; border-radius:6px; font-size:0.85rem; margin-top:4px;'>📌 <b>ZALECENIE COACH'A:</b> {cw_dane['opis']}</div>", unsafe_allow_html=True)
-                            
-                        st.markdown("<hr style='margin: 8px 0; border: none; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
-                        
-        else:
-            if not plany_na_dzis or not has_gym:
-                st.markdown(
-                    f'<div class="recovery-activity-box" style="background-color: #E3F2FD; border: 1px solid #BBDEFB; color: #0D47A1;">'
-                    f'<h3 style="margin-top:0px; color:#0D47A1;">🌿 BRAK SIŁOWNI W DNIU DZISIEJSZYM</h3>'
-                    f'<p>Dziś nie masz zaplanowanego tradycyjnego treningu siłowego.</p>'
-                    f'<p style="font-weight: bold; margin-bottom: 0px;">Przejdź do zakładki "📅 MIKROCYKL", aby sprawdzić, czy sztab zaplanował odnowę lub inną aktywność!</p>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-            else:
-                with st.form("gym_form", border=True):
-                    st.markdown(f"<p style='text-align: center; font-size:1.6rem; margin-bottom: 5px; color:{COLOR_PRIMARY};'>🏋️ TWÓJ DZIENNIK TRENINGU SIŁOWEGO</p>", unsafe_allow_html=True)
-                    st.markdown("<p style='font-size: 0.85rem; color: #555; margin-bottom: 20px; text-align: center;'>Zrealizuj poniższe plany i wpisz obciążenia w kilogramach dla głównej części:</p>", unsafe_allow_html=True)
-                    
-                    wyniki_do_powerbi = {}
-                    tonaz_calkowity = 0.0
-                    global_cw_idx = 1
-                    
-                    for plan in plany_na_dzis:
-                        silowe = plan.get("silownia", [])
-                        if not silowe: continue
-                        
-                        rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
-                        st.markdown(f"""
-                        <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px;">
-                            <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
-                            <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        for cwiczenie in silowe:
-                            cw_dane = parsuj_cwiczenie(cwiczenie)
-                            
-                            st.markdown(f"#### {global_cw_idx}. {cw_dane['nazwa'].upper()}")
-                            wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Nazwa"] = f"[{plan['tytul']}] {cw_dane['nazwa']}"
-                            
-                            # Info o zaleceniach od trenera
-                            if cw_dane['opis']:
-                                st.markdown(f"<div style='background-color:#E3F2FD; color:#0D47A1; padding:6px 10px; border-radius:6px; font-size:0.85rem; margin-bottom:8px;'>📌 <b>ZALECENIE COACH'A:</b> {cw_dane['opis']}</div>", unsafe_allow_html=True)
-                                
-                            # Info o OSTATNIM WYNIKU zawodnika w tym ćwiczeniu
-                            ostatni = znajdz_ostatni_wynik(df_wyniki_silownia_cache, zawodnik, cw_dane["nazwa"])
-                            if ostatni:
-                                st.markdown(f"<div style='font-size:0.8rem; color:#E65100; background:#FFF3E0; padding:4px 8px; border-radius:4px; display:inline-block; margin-bottom:8px;'>🎯 <b>Ostatni wynik ({ostatni['data']}):</b> {ostatni['kg']} kg</div>", unsafe_allow_html=True)
-                            
-                            if cw_dane['link']:
-                                st.markdown(f"<a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-bottom: 10px; padding: 4px 10px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.8rem;'>▶️ OBEJRZYJ WIDEO INSTRUKTAŻOWE</a>", unsafe_allow_html=True)
-                                
-                            if cw_dane['glowne']:
-                                seria_cols = st.columns(min(cw_dane['serie'], 5))
-                                suma_cwiczenia = 0.0
-                                
-                                for s in range(cw_dane['serie']):
-                                    with seria_cols[s % 5]:
-                                        ciezar_serii = st.number_input(
-                                            f"S{s+1} (kg)", 
-                                            min_value=0.0, max_value=350.0, value=0.0, step=2.5, 
-                                            key=f"obc_{global_cw_idx}_{s}"
-                                        )
-                                        suma_cwiczenia += ciezar_serii
-                                        wyniki_do_powerbi[f"Cw_{global_cw_idx}_Seria_{s+1}_KG"] = float(ciezar_serii)
-                                        
-                                wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Suma_KG"] = float(suma_cwiczenia)
-                                tonaz_calkowity += suma_cwiczenia
-                            else:
-                                st.markdown(f"**Zaplanowane serie:** {cw_dane['serie']}")
-                                st.markdown("<span style='color:#666; font-size:0.85rem;'>*Ćwiczenie akcesoryjne - wykonaj zgodnie z zaleceniami, bez wpisywania ciężaru.*</span>", unsafe_allow_html=True)
-                                wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Suma_KG"] = 0.0
-                            
-                            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-                            global_cw_idx += 1
-                    
-                    st.markdown("---")
-                    k_gym = st.text_area("UWAGI DO TRENINGU (Opcjonalnie)", placeholder="Np. ból w barku przy 3 serii...")
-                    
-                    if st.form_submit_button("WYŚLIJ RAPORT SIŁOWY"):
-                        timestamp = datetime.now(PL_TZ).strftime("%Y-%m-%d %H:%M:%S")
-                        
-                        pelny_raport = {
-                            "Data": timestamp,
-                            "Zawodnik": zawodnik,
-                            "Tonaz_Calkowity_KG": float(tonaz_calkowity),
-                            "Uwagi": k_gym
-                        }
-                        pelny_raport.update(wyniki_do_powerbi)
-                        
-                        save_gym_to_gsheets(pelny_raport)
 
     with tab_cal:
         st.markdown("### 📋 PLAN TYGODNIA")
@@ -727,6 +599,133 @@ if zawodnik:
         else:
             st.info(f"ℹ️ Brak zaplanowanych jednostek na dzień {wybrany_dzien_date.strftime('%d.%m.%Y')}. Odpoczywaj!")
 
+    if False: # Tymczasowo wyłączona zakładka: with tab_gym:
+        try:
+            df_wyniki_silownia_cache = conn.read(worksheet="Wyniki_Silownia", ttl=60)
+        except:
+            df_wyniki_silownia_cache = pd.DataFrame()
+            
+        juz_wyslano = check_today_gym_report(zawodnik)
+        plany_na_dzis = get_today_gym_plan(zawodnik)
+        has_gym = any(p.get("silownia", []) for p in plany_na_dzis)
+        
+        if juz_wyslano:
+            st.markdown(f'<div class="already-sent"><p style="font-size: 1.2rem; margin-bottom: 10px;">🏋️ WITAJ {zawodnik.split()[0]}!</p><p>TWÓJ RAPORT Z TRENINGU SIŁOWEGO ZOSTAŁ JUŻ ZAPISANY.</p></div>', unsafe_allow_html=True)
+            
+            if has_gym:
+                st.markdown(f"<br><h3 style='text-align: center; color: {COLOR_PRIMARY};'>📋 TWÓJ DZISIEJSZY PLAN</h3>", unsafe_allow_html=True)
+                for plan in plany_na_dzis:
+                    silowe = plan.get("silownia", [])
+                    if not silowe: continue
+                    
+                    rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
+                    st.markdown(f"""
+                    <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px; margin-top: 15px;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    for idx, cwiczenie in enumerate(silowe):
+                        cw_dane = parsuj_cwiczenie(cwiczenie)
+                        typ_cwiczenia = "Główne" if cw_dane["glowne"] else "Akcesoryjne"
+                        
+                        link_html = f" <br><a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-top: 5px; padding: 3px 8px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.75rem;'>▶️ OBEJRZYJ WIDEO</a>" if cw_dane["link"] else ""
+                        
+                        st.markdown(f"**{idx+1}. {cw_dane['nazwa']}** <br><span style='font-size:0.85rem; color:#555;'>Serie: {cw_dane['serie']} | Typ: {typ_cwiczenia}</span>{link_html}", unsafe_allow_html=True)
+                        
+                        if cw_dane['opis']:
+                            st.markdown(f"<div style='background-color:#E3F2FD; color:#0D47A1; padding:6px 10px; border-radius:6px; font-size:0.85rem; margin-top:4px;'>📌 <b>ZALECENIE COACH'A:</b> {cw_dane['opis']}</div>", unsafe_allow_html=True)
+                            
+                        st.markdown("<hr style='margin: 8px 0; border: none; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
+                        
+        else:
+            if not plany_na_dzis or not has_gym:
+                st.markdown(
+                    f'<div class="recovery-activity-box" style="background-color: #E3F2FD; border: 1px solid #BBDEFB; color: #0D47A1;">'
+                    f'<h3 style="margin-top:0px; color:#0D47A1;">🌿 BRAK SIŁOWNI W DNIU DZISIEJSZYM</h3>'
+                    f'<p>Dziś nie masz zaplanowanego tradycyjnego treningu siłowego.</p>'
+                    f'<p style="font-weight: bold; margin-bottom: 0px;">Przejdź do zakładki "📅 MIKROCYKL", aby sprawdzić, czy sztab zaplanował odnowę lub inną aktywność!</p>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                with st.form("gym_form", border=True):
+                    st.markdown(f"<p style='text-align: center; font-size:1.6rem; margin-bottom: 5px; color:{COLOR_PRIMARY};'>🏋️ TWÓJ DZIENNIK TRENINGU SIŁOWEGO</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-size: 0.85rem; color: #555; margin-bottom: 20px; text-align: center;'>Zrealizuj poniższe plany i wpisz obciążenia w kilogramach dla głównej części:</p>", unsafe_allow_html=True)
+                    
+                    wyniki_do_powerbi = {}
+                    tonaz_calkowity = 0.0
+                    global_cw_idx = 1
+                    
+                    for plan in plany_na_dzis:
+                        silowe = plan.get("silownia", [])
+                        if not silowe: continue
+                        
+                        rodzaj_tag = "🔴 TRENING INDYWIDUALNY" if plan["zrodlo"] == zawodnik else f"🟢 {plan['zrodlo'].upper()}"
+                        st.markdown(f"""
+                        <div style="background-color: {COLOR_BG}; padding: 10px 15px; border-left: 5px solid {COLOR_PRIMARY}; border-radius: 5px; margin-bottom: 15px;">
+                            <span style="font-size: 0.75rem; font-weight: bold; color: {COLOR_PRIMARY};">{rodzaj_tag}</span><br>
+                            <span style="font-size: 1.2rem; font-weight: bold; color: {COLOR_TEXT};">{plan['tytul'].upper()}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        for cwiczenie in silowe:
+                            cw_dane = parsuj_cwiczenie(cwiczenie)
+                            
+                            st.markdown(f"#### {global_cw_idx}. {cw_dane['nazwa'].upper()}")
+                            wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Nazwa"] = f"[{plan['tytul']}] {cw_dane['nazwa']}"
+                            
+                            if cw_dane['opis']:
+                                st.markdown(f"<div style='background-color:#E3F2FD; color:#0D47A1; padding:6px 10px; border-radius:6px; font-size:0.85rem; margin-bottom:8px;'>📌 <b>ZALECENIE COACH'A:</b> {cw_dane['opis']}</div>", unsafe_allow_html=True)
+                                
+                            ostatni = znajdz_ostatni_wynik(df_wyniki_silownia_cache, zawodnik, cw_dane["nazwa"])
+                            if ostatni:
+                                st.markdown(f"<div style='font-size:0.8rem; color:#E65100; background:#FFF3E0; padding:4px 8px; border-radius:4px; display:inline-block; margin-bottom:8px;'>🎯 <b>Ostatni wynik ({ostatni['data']}):</b> {ostatni['kg']} kg</div>", unsafe_allow_html=True)
+                            
+                            if cw_dane['link']:
+                                st.markdown(f"<a href='{cw_dane['link']}' target='_blank' style='display: inline-block; margin-bottom: 10px; padding: 4px 10px; background-color: {COLOR_PRIMARY}; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.8rem;'>▶️ OBEJRZYJ WIDEO INSTRUKTAŻOWE</a>", unsafe_allow_html=True)
+                                
+                            if cw_dane['glowne']:
+                                seria_cols = st.columns(min(cw_dane['serie'], 5))
+                                suma_cwiczenia = 0.0
+                                
+                                for s in range(cw_dane['serie']):
+                                    with seria_cols[s % 5]:
+                                        ciezar_serii = st.number_input(
+                                            f"S{s+1} (kg)", 
+                                            min_value=0.0, max_value=350.0, value=0.0, step=2.5, 
+                                            key=f"obc_{global_cw_idx}_{s}"
+                                        )
+                                        suma_cwiczenia += ciezar_serii
+                                        wyniki_do_powerbi[f"Cw_{global_cw_idx}_Seria_{s+1}_KG"] = float(ciezar_serii)
+                                        
+                                wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Suma_KG"] = float(suma_cwiczenia)
+                                tonaz_calkowity += suma_cwiczenia
+                            else:
+                                st.markdown(f"**Zaplanowane serie:** {cw_dane['serie']}")
+                                st.markdown("<span style='color:#666; font-size:0.85rem;'>*Ćwiczenie akcesoryjne - wykonaj zgodnie z zaleceniami, bez wpisywania ciężaru.*</span>", unsafe_allow_html=True)
+                                wyniki_do_powerbi[f"Cwiczenie_{global_cw_idx}_Suma_KG"] = 0.0
+                            
+                            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+                            global_cw_idx += 1
+                    
+                    st.markdown("---")
+                    k_gym = st.text_area("UWAGI DO TRENINGU (Opcjonalnie)", placeholder="Np. ból w barku przy 3 serii...")
+                    
+                    if st.form_submit_button("WYŚLIJ RAPORT SIŁOWY"):
+                        timestamp = datetime.now(PL_TZ).strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        pelny_raport = {
+                            "Data": timestamp,
+                            "Zawodnik": zawodnik,
+                            "Tonaz_Calkowity_KG": float(tonaz_calkowity),
+                            "Uwagi": k_gym
+                        }
+                        pelny_raport.update(wyniki_do_powerbi)
+                        
+                        save_gym_to_gsheets(pelny_raport)
+
     if False: # Tymczasowo wyłączona zakładka: with tab_hist:
         st.markdown(f"<h3 style='text-align: center; color: {COLOR_PRIMARY};'>📈 TWOJA HISTORIA TRENINGÓW</h3>", unsafe_allow_html=True)
         
@@ -740,7 +739,6 @@ if zawodnik:
                 if df_moje.empty:
                     st.info("Brak treningów w bazie.")
                 else:
-                    # 1. Dashboard z trendem
                     last_tonage = df_moje.iloc[0]['Tonaz_Calkowity_KG'] if 'Tonaz_Calkowity_KG' in df_moje.columns else 0
                     
                     if len(df_moje) > 1:
@@ -751,13 +749,11 @@ if zawodnik:
                         
                     st.metric("OSTATNI TRENING (CAŁKOWITY TONAŻ)", f"{last_tonage:.0f} kg", delta=f"{delta_tonage:.0f} kg względem poprzedniego" if delta_tonage is not None else None)
                     
-                    # 2. Wykres progresji 
                     wszystkie_cwiczenia = []
                     for i in range(1, 6):
                         cols = [c for c in df_moje.columns if f"Cwiczenie_{i}_Nazwa" in c]
                         if cols: wszystkie_cwiczenia.extend(df_moje[cols[0]].dropna().unique())
                     
-                    # Czyszczenie nazw do listy wyboru (usuwanie nagłówków typu [FBW] itp)
                     czyste_nazwy_cwiczen = set([re.sub(r"\[.*?\]", "", c).strip() for c in wszystkie_cwiczenia])
                     
                     if czyste_nazwy_cwiczen:
@@ -788,7 +784,6 @@ if zawodnik:
                                 fig_cw.update_layout(xaxis_tickformat="%d.%m.%y", yaxis_title="Suma obciążeń (kg)", xaxis_title="Data")
                                 st.plotly_chart(fig_cw, use_container_width=True)
                     
-                    # 3. Oś czasu
                     st.markdown("---")
                     st.markdown("#### 📅 TWOJE OSTATNIE SESJE")
                     
