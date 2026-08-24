@@ -154,10 +154,8 @@ def check_today_report(zawodnik, typ):
     except:
         return False
 
-# ZABEZPIECZONA FUNKCJA ZAPISU (RACE CONDITION FIX)
 def save_to_gsheets(row_data):
     try:
-        # Wymuszenie odczytu z serwera z ttl=0 przed aktualizacją
         try:
             df_original = conn.read(worksheet="Arkusz1", ttl=0)
         except:
@@ -211,7 +209,7 @@ def save_to_gsheets(row_data):
         updated_df_internal.columns = final_cols
         
         conn.update(worksheet="Arkusz1", data=updated_df_internal)
-        st.cache_data.clear() # Czyszczenie pamięci by każdy gracz miał czyste dane
+        st.cache_data.clear() 
         st.success("✔ RAPORT WYSŁANY!")
         return True
     except Exception as e:
@@ -231,7 +229,6 @@ def check_today_gym_report(zawodnik):
     except:
         return False
 
-# ZABEZPIECZONA FUNKCJA ZAPISU SIŁOWNI
 def save_gym_to_gsheets(row_data):
     try:
         try:
@@ -381,22 +378,36 @@ elif not st.session_state.logout_triggered:
 # --- STYLIZACJA CSS ---
 st.markdown(f"""
     <style>
-    /* BEZPIECZNE UKRYWANIE MENU I WYMUSZANIE SPORTOWEJ CZCIONKI */
-    html, body, div, span, p, h1, h2, h3, h4, h5, h6, label, a, button, input, select, textarea, [class*="st-"], [class*="css"] {{
-        font-family: 'Impact', 'Arial Black', sans-serif !important;
+    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+    
+    /* WYMUSZENIE JASNEGO MOTYWU I BEZPIECZEŃSTWO W TRYBIE NOCNYM */
+    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
+    #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}} header {{visibility: hidden;}}
+    
+    /* Zabezpieczenie czcionki i koloru tekstu przed odwróceniem przez tryb nocny */
+    html, body, [class*="st-"], .stMarkdown, .stSelectbox, .stSlider, .stTextArea, label, p, span, h1, h2, h3, h4, h5, h6, li {{ 
+        font-family: 'Anton', sans-serif !important; 
+        color: {COLOR_TEXT} !important; 
     }}
     
-    [data-testid="stToolbar"] {{visibility: hidden !important; display: none !important;}}
-    footer {{visibility: hidden !important; display: none !important;}}
-    #MainMenu {{visibility: hidden !important; display: none !important;}}
-    .stDeployButton {{display: none !important;}}
+    /* Naprawa szarych/czarnych pól (dropdown/input) wymuszonych przez Night Mode */
+    input, textarea, div[data-baseweb="select"] > div, div[data-baseweb="base-input"] {{
+        background-color: #FFFFFF !important;
+        color: {COLOR_TEXT} !important;
+        -webkit-text-fill-color: {COLOR_TEXT} !important;
+    }}
     
-    .stApp {{ background: linear-gradient(180deg, #FFFFFF 0%, #FFEBEE 100%) !important; }}
+    /* Jasne tło rozwiniętej listy wyborów */
+    div[data-baseweb="popover"] > div, div[data-baseweb="menu"] {{
+        background-color: #FFFFFF !important;
+    }}
     
+    /* Ikony systemowe zachowują swój pierwotny kształt */
     [data-testid="stIconMaterial"], [data-testid="stExpander"] summary span, .material-symbols-rounded, .streamlit-expander-icon {{ 
         font-family: 'Material Symbols Rounded', sans-serif !important; 
     }}
     
+    /* --- POZOSTAŁE STYLE ELEMENTÓW --- */
     .custom-header {{ text-align: center; margin-bottom: 10px; }}
     h1 {{ color: {COLOR_PRIMARY} !important; text-transform: uppercase; margin: 0; letter-spacing: 1px; font-size: 1.8rem !important; }}
     .logo-container {{ display: flex; justify-content: center; align-items: center; width: 100%; margin: 0 auto; padding: 10px 0; }}
@@ -404,7 +415,7 @@ st.markdown(f"""
     button[kind="formSubmit"], .nav-button button, .logout-btn button {{ background-color: {COLOR_PRIMARY} !important; color: white !important; font-weight: bold !important; border-radius: 10px !important; width: 100% !important; border: none !important; padding: 10px !important; margin-top: 10px !important; text-transform: uppercase; }}
     
     .wellness-legend {{ background: linear-gradient(90deg, #FFEBEE 0%, #FFFDE7 50%, #E8F5E9 100%); padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 20px; text-align: center; }}
-    .legend-item {{ flex: 1; font-size: 0.8rem; }}
+    .legend-item {{ flex: 1; font-size: 0.8rem; color: #4A0404; }}
     
     .login-info {{ background-color: {COLOR_PRIMARY}; color: white !important; padding: 8px; border-radius: 10px; text-align: center; margin: 0 auto 5px auto; max-width: 300px; font-weight: bold; font-size: 0.9rem; }}
     .already-sent {{ background-color: #FFEBEE; color: #B71C1C; padding: 25px; border-radius: 20px; text-align: center; font-weight: bold; border: 2px solid #FFCDD2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
@@ -436,7 +447,7 @@ st.markdown('<div class="custom-header"><h1>Performance Monitor</h1></div>', uns
 if current_player:
     st.markdown(f'<div class="login-info">ZALOGOWANO: {current_player.upper()}</div>', unsafe_allow_html=True)
     st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
-    if st.button("Wyloguj (Zmień zawodnika)", use_container_width=True):
+    if st.button("Wyloguj (Zmień zawodniczkę)", use_container_width=True):
         st.query_params.clear()
         st.session_state.logout_triggered = True
         st.session_state.manual_selection = None
@@ -459,7 +470,6 @@ else:
     zawodnik = None
 
 if zawodnik:
-    # Tymczasowe ukrycie zakładek Siłownia i Historia (zostawiamy 3 główne)
     tab_well, tab_rpe, tab_cal = st.tabs(["📊 WELLNESS", "🏃 RPE", "📅 MIKROCYKL"])
 
     with tab_well:
