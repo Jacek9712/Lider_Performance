@@ -92,7 +92,7 @@ def get_logo():
 
 LOGO_PATH = get_logo()
 
-# --- AKTUALNA LISTA ZAWODNIKÓW ---
+# --- AKTUAL LISTA ZAWODNIKÓW ---
 LISTA_ZAWODNIKOW = sorted([
     "Agnieszka Adamczak", "Agnieszka Bartczak", "Natalia Błaszczak", 
     "Laura Chmielewska", "Katarzyna Kosińska", "Zofia Przybylska", 
@@ -108,32 +108,8 @@ if "week_offset" not in st.session_state: st.session_state.week_offset = 0
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- FUNKCJA POMOCNICZA DO BEZPIECZNEGO ZAPISU (gspread) ---
-def get_gspread_worksheet(worksheet_name):
-    """Dociera do natywnego klienta gspread i zwraca dany arkusz, umożliwiając append_row."""
-    client = conn.client
-    try:
-        # Próba wyciągnięcia nazwy arkusza z pliku st.secrets
-        gsheets_config = st.secrets["connections"]["gsheets"]
-        secret_target = gsheets_config.get("spreadsheet") or gsheets_config.get("spreadsheet_url") or gsheets_config.get("spreadsheet_id")
-    except Exception:
-        secret_target = None
-        
-    if not secret_target:
-        raise ValueError("Nie znaleziono adresu/ID arkusza ('spreadsheet') w st.secrets.")
-
-    if secret_target.startswith("http"):
-        spreadsheet = client.open_by_url(secret_target)
-    else:
-        try:
-            spreadsheet = client.open_by_key(secret_target)
-        except Exception:
-            spreadsheet = client.open(secret_target)
-            
-    return spreadsheet.worksheet(worksheet_name)
-
 # --- SYSTEM DYNAMICZNEGO POBIERANIA GRUP Z ARKUSZA ---
-@st.cache_data(ttl=3600, show_spinner=False) # Zwiększono cache na 1 godzinę (optymalizacja API)
+@st.cache_data(ttl=3600, show_spinner=False)
 def pobierz_dynamiczne_grupy():
     try:
         df_grupy = conn.read(worksheet="Grupy", ttl=3600)
@@ -180,39 +156,67 @@ def check_today_report(zawodnik, typ):
         print(f"Błąd sprawdzania dzisiejszego raportu: {e}")
         return False
 
-# Bezpieczny zapis z ominięciem konfliktów
+# --- BEZPIECZNY ZAPIS DO GOOGLE SHEETS (Natywny pandas) ---
 def save_to_gsheets(row_data):
     try:
+        # Odczyt najświeższych danych bez cache (ttl=0), by zminimalizować konflikty
+        try:
+            df_original = conn.read(worksheet="Arkusz1", ttl=0)
+        except Exception:
+            df_original = pd.DataFrame()
+            
+        if df_original is None: 
+            df_original = pd.DataFrame()
+            
+        if df_original.empty:
+            df_internal = pd.DataFrame(columns=["Data", "Typ_Raportu", "Zawodnik", "Sen", "Zmeczenie", "Bolesnosc", "Stres", "RPE", "Komentarz"])
+            oryginalne_kolumny = list(df_internal.columns)
+        else:
+            oryginalne_kolumny = list(df_original.columns)
+            df_internal = normalizuj_df_arkusza(df_original)
+            
         # Zabezpieczenie wizualne (czy dzisiaj już wysłano)
-        if check_today_report(row_data['Zawodnik'], row_data['Typ_Raportu']):
+        df_internal['Data_dt'] = pd.to_datetime(df_internal['Data'], errors='coerce')
+        dzisiaj = datetime.now(PL_TZ).date()
+        
+        if not df_internal.empty and 'Data_dt' in df_internal.columns:
+            juz_jest = df_internal[(df_internal['Zawodnik'] == row_data['Zawodnik']) & (df_internal['Typ_Raportu'] == row_data['Typ_Raportu']) & (df_internal['Data_dt'].dt.date == dzisiaj)]
+        else:
+            juz_jest = pd.DataFrame()
+            
+        df_internal = df_internal.drop(columns=['Data_dt'], errors='ignore')
+        
+        if not juz_jest.empty:
             st.warning("⚠️ Twój raport został już wysłany!")
             return True
             
-        worksheet = get_gspread_worksheet("Arkusz1")
+        # Dopisywanie danych
+        row_data_cleaned = {k: ("" if v is None else v) for k, v in row_data.items()}
+        new_row = pd.DataFrame([row_data_cleaned])
+        updated_df_internal = pd.concat([df_internal, new_row], ignore_index=True)
         
-        # Pobieramy pierwszy wiersz (nagłówki) by wiedzieć w jakiej kolejności ułożyć dane
-        headers = worksheet.row_values(1) 
+        # Przywracanie oryginalnych nazw kolumn by nie zepsuć nagłówków w arkuszu
+        standard_to_original = {}
+        for orig_col in oryginalne_kolumny:
+            norm = usun_polskie_znaki(orig_col)
+            if "data" in norm or "date" in norm or "time" in norm: standard_to_original["Data"] = orig_col
+            elif "typ" in norm: standard_to_original["Typ_Raportu"] = orig_col
+            elif "zawod" in norm or "gracz" in norm or "player" in norm or "nazw" in norm: standard_to_original["Zawodnik"] = orig_col
+            elif "sen" in norm or "sleep" in norm: standard_to_original["Sen"] = orig_col
+            elif "zmec" in norm or "fatigue" in norm: standard_to_original["Zmeczenie"] = orig_col
+            elif "bol" in norm or "sore" in norm or "zakwas" in norm: standard_to_original["Bolesnosc"] = orig_col
+            elif "stres" in norm or "stress" in norm: standard_to_original["Stres"] = orig_col
+            elif "rpe" in norm or "intens" in norm: standard_to_original["RPE"] = orig_col
+            elif "komen" in norm or "uwag" in norm or "note" in norm: standard_to_original["Komentarz"] = orig_col
+            
+        final_cols = []
+        for col in updated_df_internal.columns:
+            if col in standard_to_original: final_cols.append(standard_to_original[col])
+            else: final_cols.append(col)
+        updated_df_internal.columns = final_cols
         
-        row_values = []
-        for col_name in headers:
-            norm_col = re.sub(r'[^a-z0-9]', '', usun_polskie_znaki(col_name))
-            val = ""
-            
-            # Wstawienie na podstawie dopasowania nagłówków
-            if "data" in norm_col or "date" in norm_col or "time" in norm_col: val = row_data.get("Data", "")
-            elif "typ" in norm_col: val = row_data.get("Typ_Raportu", "")
-            elif "zawod" in norm_col or "gracz" in norm_col or "player" in norm_col or "nazw" in norm_col: val = row_data.get("Zawodnik", "")
-            elif "sen" in norm_col or "sleep" in norm_col: val = row_data.get("Sen", "")
-            elif "zmec" in norm_col or "fatigue" in norm_col: val = row_data.get("Zmeczenie", "")
-            elif "bol" in norm_col or "sore" in norm_col or "zakwas" in norm_col: val = row_data.get("Bolesnosc", "")
-            elif "stres" in norm_col or "stress" in norm_col: val = row_data.get("Stres", "")
-            elif "rpe" in norm_col or "intens" in norm_col: val = row_data.get("RPE", "")
-            elif "komen" in norm_col or "uwag" in norm_col or "note" in norm_col: val = row_data.get("Komentarz", "")
-            
-            row_values.append(val if val is not None else "")
-            
-        # ZAPISUJEMY TYLKO 1 WIERSZ - zapobiega nadpisywaniu u innych zawodniczek
-        worksheet.append_row(row_values)
+        # Aktualizacja arkusza
+        conn.update(worksheet="Arkusz1", data=updated_df_internal)
         st.cache_data.clear() 
         st.success("✔ RAPORT WYSŁANY!")
         return True
@@ -234,18 +238,32 @@ def check_today_gym_report(zawodnik):
         print(f"Błąd sprawdzania raportu z siłowni: {e}")
         return False
 
-# Bezpieczny zapis z ominięciem konfliktów
 def save_gym_to_gsheets(row_data):
     try:
-        worksheet = get_gspread_worksheet("Wyniki_Silownia")
-        headers = worksheet.row_values(1)
-        
-        row_values = []
-        for col_name in headers:
-            val = row_data.get(col_name, "")
-            row_values.append(val if val is not None else "")
+        try:
+            df_original = conn.read(worksheet="Wyniki_Silownia", ttl=0)
+        except Exception:
+            df_original = pd.DataFrame()
             
-        worksheet.append_row(row_values)
+        if df_original is None: 
+            df_original = pd.DataFrame()
+            
+        # Zabezpieczenie wizualne (czy dzisiaj już wysłano)
+        dzisiaj = datetime.now(PL_TZ).date()
+        if not df_original.empty and 'Data' in df_original.columns and 'Zawodnik' in df_original.columns:
+            df_original['Data_dt'] = pd.to_datetime(df_original['Data'], errors='coerce')
+            juz_jest = df_original[(df_original['Zawodnik'] == row_data['Zawodnik']) & (df_original['Data_dt'].dt.date == dzisiaj)]
+            df_original = df_original.drop(columns=['Data_dt'], errors='ignore')
+            if not juz_jest.empty:
+                st.warning("⚠️ Twój dzisiejszy raport z siłowni został już zapisany!")
+                st.cache_data.clear()
+                time.sleep(1.5)
+                return True
+                
+        new_row = pd.DataFrame([row_data])
+        updated_df = pd.concat([df_original, new_row], ignore_index=True)
+        
+        conn.update(worksheet="Wyniki_Silownia", data=updated_df)
         st.cache_data.clear()
         st.success("✔ RAPORT SIŁOWY WYSŁANY DO BAZY POWER BI!")
         return True
@@ -279,7 +297,7 @@ def znajdz_ostatni_wynik(df_wyniki, zawodnik, nazwa_cwiczenia):
                     return {"data": row['Data_dt'].strftime('%d.%m'), "kg": ", ".join(kg_list)}
     return None
 
-@st.cache_data(ttl=3600, show_spinner=False) # Zwiększono cache dla planów
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_gym_plan_for_date(nazwisko_gracza, target_date):
     puste_plany = []
     try:
